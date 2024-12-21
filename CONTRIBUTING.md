@@ -28,7 +28,7 @@ You must have a python 3.8+ and a `venv` module.
 
 ### Get AWS CLI
 
-According to guide in [official repo](https://github.com/aws/aws-cli?tab=readme-ov-file#installation):
+According to guide in the [official repo](https://github.com/aws/aws-cli?tab=readme-ov-file#installation):
 
 ```bash
 python -m venv .venv
