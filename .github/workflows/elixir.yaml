@@ -1,0 +1,43 @@
+name: Elixir
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    name: Build
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '27'
+          elixir-version: '1.17.3'
+      - run: mix deps.get
+      - run: mix compile
+  format:
+    runs-on: ubuntu-24.04
+    name: Format & Lint
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '27'
+          elixir-version: '1.17.3'
+      - run: mix deps.get
+      - run: mix credo suggest --strict
+      - run: mix format --check-formatted
+  test:
+    runs-on: ubuntu-24.04
+    name: Test
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '27'
+          elixir-version: '1.17.3'
+      - run: mix deps.get
+      - run: mix test
