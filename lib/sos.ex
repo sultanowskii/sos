@@ -1,18 +1,22 @@
-defmodule Sos do
+defmodule SOS do
   @moduledoc """
-  Documentation for `Sos`.
+  Server starter.
   """
+  use Application
+  require Logger
 
-  @doc """
-  Hello world.
+  def start(_type, _args) do
+    children = [
+      {
+        Bandit,
+        scheme: :http, plug: SOS.Router, port: 8080
+      }
+    ]
 
-  ## Examples
+    opts = [strategy: :one_for_one, name: SOS.Supervisor]
 
-      iex> Sos.hello()
-      :world
+    Logger.info("Starting application...")
 
-  """
-  def hello do
-    :world
+    Supervisor.start_link(children, opts)
   end
 end

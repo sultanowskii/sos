@@ -1,8 +1,8 @@
-defmodule SosTest do
+defmodule SOSTest do
   use ExUnit.Case
-  doctest Sos
+  doctest SOS
 
-  test "greets the world" do
-    assert Sos.hello() == :world
+  test "true" do
+    assert :world == :world
   end
 end

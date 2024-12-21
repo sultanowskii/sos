@@ -1,4 +1,4 @@
-defmodule Sos.MixProject do
+defmodule SOS.MixProject do
   use Mix.Project
 
   def project do
@@ -13,6 +13,7 @@ defmodule Sos.MixProject do
 
   def application do
     [
+      mod: {SOS, []},
       extra_applications: [:logger]
     ]
   end
@@ -20,7 +21,8 @@ defmodule Sos.MixProject do
   defp deps do
     [
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:bandit, "~> 1.0"}
     ]
   end
 end
