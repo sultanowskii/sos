@@ -6,9 +6,10 @@
 
 - `CreateBucket`
 - `ListBuckets`
-- `DeleteBuckets`
+- `DeleteBucket`
 - `PutObject`
-- `ListObjects` / `ListObjectsV2`
+- `CopyObject`
+- `ListObjectsV2`
 - `GetObject`
 - `DeleteObject`
 
@@ -47,7 +48,7 @@ architecture-beta
     storage4{group}:T -- B:junctionWorkersRight
 ```
 
-- `HTTP API` - Partially S3-compatible API frontend
+- `HTTP API` - Partially S3-compatible API 'frontend'
 - `Coordinator` - Keeps track of workers and entities. Is responsible for all operations.
 - `DB` - Database where all information regarding buckets, objects, etc is stored.
 - `Storage` - A worker which _actually_ stores the objects. Doesn't make decisions on its own, it waits for commands from the Coordinator.
