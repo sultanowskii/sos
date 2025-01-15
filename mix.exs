@@ -22,6 +22,7 @@ defmodule SOS.MixProject do
     [
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:xml_builder, "~> 2.1"},
       {:bandit, "~> 1.0"}
     ]
   end
