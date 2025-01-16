@@ -1,6 +1,6 @@
 import XmlBuilder
 
-defmodule SOS.ApiRouter do
+defmodule Brain.ApiRouter do
   @moduledoc """
   API Endpoints router.
   """

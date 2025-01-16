@@ -1,22 +1,28 @@
 defmodule SOS do
   @moduledoc """
-  Server starter.
+  CLI entrypoint.
   """
   use Application
-  require Logger
 
-  def start(_type, _args) do
-    children = [
-      {
-        Bandit,
-        scheme: :http, plug: SOS.Router, port: 8080
-      }
-    ]
+  defp print_help do
+    IO.puts("usage: sos COMMAND\n")
+    IO.puts("Commands:")
+    IO.puts("\tbrain\tThe Leader, the Server, the Whatever-you-name-it")
+    IO.puts("\tstorage\tStorage agent")
+  end
 
-    opts = [strategy: :one_for_one, name: SOS.Supervisor]
+  def start(_type, _argv) do
+    case System.argv() do
+      [] ->
+        print_help()
 
-    Logger.info("Starting application...")
+      ["brain" | args] ->
+        System.no_halt(true)
+        Cmd.Brain.start(args)
 
-    Supervisor.start_link(children, opts)
+      ["storage" | args] ->
+        System.no_halt(true)
+        Cmd.Storage.start(args)
+    end
   end
 end

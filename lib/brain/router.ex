@@ -1,11 +1,11 @@
-defmodule SOS.Router do
+defmodule Brain.Router do
   use Plug.Router
   require Logger
 
   plug(:match)
   plug(:dispatch)
 
-  forward("/api", to: SOS.ApiRouter)
+  forward("/api", to: Brain.ApiRouter)
 
   match _ do
     request_url = conn |> request_url()
