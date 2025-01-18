@@ -68,14 +68,83 @@ endpoint_url = http://localhost:8080/api
 
 ## Multi-node basic setup
 
+### Local
+
 Terminal 1:
 
 ```bash
-elixir --sname server@localhost -S mix run -- brain
+elixir \
+    --name server@127.0.0.1 \
+    --cookie cookie-example \
+    -S mix run -- brain
 ```
 
 Terminal 2:
 
 ```bash
-elixir --sname client@localhost -S mix run -- storage-agent --brain-name server@localhost
+elixir \
+    --name client@127.0.0.1 \
+    --cookie cookie-example \
+    -S mix run -- storage-agent --brain-name server@127.0.0.1
+```
+
+### Docker
+
+#### Build an image
+
+```bash
+docker buildx build \
+    --file Dockerfile \
+    --tag sos-playground:1.0 \
+    --load .    
+```
+
+#### Create a network
+
+```bash
+docker network create sos-playground-network
+```
+
+#### Run containers
+
+**IMPORTANT**: Node connection only works with 'valid' hostnames. Therefore, if you want to choose some other hostname (`--name`), make sure it contains a dot (`.`).
+
+Brain container:
+
+```bash
+docker run \
+    --rm \
+    -it \
+    --network=sos-playground-network \
+    --name=sos.server sos-playground:1.0
+```
+
+Storage agent container:
+
+```bash
+docker run \
+    --rm \
+    -it \
+    --network=sos-playground-network \
+    --name=sos.client sos-playground:1.0
+```
+
+#### Inside containers
+
+Inside brain container:
+
+```bash
+elixir \
+    --name server@sos.server \
+    --cookie cookie-example \
+    -S mix run -- brain
+```
+
+Inside storage agent container:
+
+```bash
+elixir \
+    --name client@sos.client \
+    --cookie cookie-example \
+    -S mix run -- storage-agent --brain-name server@sos.server
 ```
