@@ -21,7 +21,7 @@ defmodule SOS do
         System.no_halt(true)
         Cmd.Storage.start(args)
 
-      [_] ->
+      _ ->
         print_help()
     end
 

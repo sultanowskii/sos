@@ -9,10 +9,11 @@ defmodule Cmd.Brain do
       {
         Bandit,
         scheme: :http, plug: Brain.Router, port: 8080
-      }
+      },
+      {Brain.Coordinator, []}
     ]
 
-    opts = [strategy: :one_for_one, name: SOS.Supervisor]
+    opts = [strategy: :one_for_one, name: Brain.Supervisor]
 
     Logger.info("Starting application...")
 
