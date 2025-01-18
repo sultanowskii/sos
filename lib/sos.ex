@@ -15,11 +15,11 @@ defmodule SOS do
     case System.argv() do
       ["brain" | args] ->
         System.no_halt(true)
-        Cmd.Brain.start(args)
+        Brain.Cmd.start(args)
 
       ["storage-agent" | args] ->
         System.no_halt(true)
-        Cmd.StorageAgent.start(args)
+        StorageAgent.Cmd.start(args)
 
       _ ->
         print_help()

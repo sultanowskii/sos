@@ -1,4 +1,4 @@
-defmodule Cmd.Brain do
+defmodule Brain.Cmd do
   @moduledoc """
   Brain entrypoint.
   """

@@ -65,3 +65,17 @@ region = idk
 region = idk
 endpoint_url = http://localhost:8080/api
 ```
+
+## Multi-node basic setup
+
+Terminal 1:
+
+```bash
+elixir --sname server@localhost -S mix run -- brain
+```
+
+Terminal 2:
+
+```bash
+elixir --sname client@localhost -S mix run -- storage-agent --brain-name server@localhost
+```
