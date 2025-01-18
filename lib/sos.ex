@@ -13,9 +13,6 @@ defmodule SOS do
 
   def start(_type, _argv) do
     case System.argv() do
-      [] ->
-        print_help()
-
       ["brain" | args] ->
         System.no_halt(true)
         Cmd.Brain.start(args)
@@ -23,6 +20,11 @@ defmodule SOS do
       ["storage" | args] ->
         System.no_halt(true)
         Cmd.Storage.start(args)
+
+      [_] ->
+        print_help()
     end
+
+    {:ok, self()}
   end
 end
