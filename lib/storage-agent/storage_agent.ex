@@ -1,11 +1,13 @@
-defmodule Storage do
+defmodule StorageAgent do
   @moduledoc """
   Storage Agent.
   """
   use GenServer
 
   def start_link do
-    GenServer.start_link(__MODULE__, :ok,
+    GenServer.start_link(
+      __MODULE__,
+      :ok,
       name: {:global, "storage_#{:rand.uniform(100_000_000)}"}
     )
   end

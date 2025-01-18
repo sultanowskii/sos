@@ -17,9 +17,9 @@ defmodule SOS do
         System.no_halt(true)
         Cmd.Brain.start(args)
 
-      ["storage" | args] ->
+      ["storage-agent" | args] ->
         System.no_halt(true)
-        Cmd.Storage.start(args)
+        Cmd.StorageAgent.start(args)
 
       _ ->
         print_help()

@@ -1,10 +1,10 @@
-defmodule Cmd.Storage do
+defmodule Cmd.StorageAgent do
   @moduledoc """
-  Storage entrypoint.
+  Storage Agent entrypoint.
   """
   require Logger
 
   def start(_args) do
-    Storage.start_link()
+    StorageAgent.start_link()
   end
 end

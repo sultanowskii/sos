@@ -34,10 +34,10 @@ architecture-beta
     http_api:T -- L:db
     coordinator:T -- B:db
 
-    service storage1(disk)[Storage 1] in worker1
-    service storage2(disk)[Storage 2] in worker2
-    service storage3(disk)[Storage 3] in worker3
-    service storage4(disk)[Storage 4] in worker4
+    service storage1(disk)[Storage Agent 1] in worker1
+    service storage2(disk)[Storage Agent 2] in worker2
+    service storage3(disk)[Storage Agent 3] in worker3
+    service storage4(disk)[Storage Agent 4] in worker4
 
     storage1{group}:B -- T:junctionWorkersCenter
     coordinator{group}:R -- L:junctionWorkersCenter
@@ -52,10 +52,3 @@ architecture-beta
 - `Coordinator` - Keeps track of workers and entities. Is responsible for all operations.
 - `DB` - Database where all information regarding buckets, objects, etc is stored.
 - `Storage` - A worker which _actually_ stores the objects. Doesn't make decisions on its own, it waits for commands from the Coordinator.
-
-## TBD
-
-1. I guess we should be replicating object over all workers
-2. Therefore, a distributed transaction is required here
-3. And there also should be a way to somehow add another worker / restore the failed one - which would require somehow copying all the objects from one of the healthy workers (so that they are all in the same state)
-4. Or maybe we should just have ONE storage worker for the sake of simplicity?
