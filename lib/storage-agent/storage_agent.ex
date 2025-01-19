@@ -1,6 +1,6 @@
 defmodule StorageAgent do
   @moduledoc """
-  Storage Agent responsible for handling object storage operations.
+  Storage Agent is responsible for handling object storage operations.
   """
   use GenServer
   require Logger
@@ -16,27 +16,21 @@ defmodule StorageAgent do
   end
 
   def init(config) do
-    case init_storage(config) do
-      {:ok, config} ->
-        {:ok, config}
-
-      {:stop, reason} ->
-        {:stop, reason}
-    end
+    init_storage(config)
   end
 
   defp init_storage(config) do
     case File.mkdir_p(@storage_dir) do
       :ok ->
-        Logger.info("Directory with name #{@storage_dir} created successfully")
+        Logger.debug("directory with name #{@storage_dir} created successfully")
         {:ok, config}
 
       {:error, :eexist} ->
-        Logger.info("Directory with name #{@storage_dir} already exists")
+        Logger.debug("directory with name #{@storage_dir} already exists")
         {:ok, config}
 
       {:error, reason} ->
-        Logger.error("Failed to create directory with name #{@storage_dir}: #{reason}")
+        Logger.error("failed to create directory with name #{@storage_dir}: #{reason}")
         {:stop, reason}
     end
   end
@@ -51,11 +45,11 @@ defmodule StorageAgent do
 
     case StorageOperation.write(file_path, data) do
       :ok ->
-        Logger.info("Saved object to bucket=#{bucket}, key=#{key}")
+        Logger.debug("saved object to bucket=#{bucket}, key=#{key}")
         {:reply, :ok, state}
 
       {:error, reason} ->
-        Logger.error("Failed to save object to bucket=#{bucket}, key=#{key}: #{reason}")
+        Logger.error("failed to save object to bucket=#{bucket}, key=#{key}: #{reason}")
         {:reply, {:error, reason}, state}
     end
   end
@@ -65,11 +59,11 @@ defmodule StorageAgent do
 
     case StorageOperation.read(file_path) do
       {:ok, binary_data} ->
-        Logger.info("Retrieved object from bucket=#{bucket}, key=#{key}")
+        Logger.debug("retrieved object from bucket=#{bucket}, key=#{key}")
         {:reply, {:ok, binary_data}, state}
 
       {:error, reason} ->
-        Logger.error("Failed to retrieve object from bucket=#{bucket}, key=#{key}: #{reason}")
+        Logger.error("failed to retrieve object from bucket=#{bucket}, key=#{key}: #{reason}")
         {:reply, {:error, reason}, state}
     end
   end
@@ -79,11 +73,11 @@ defmodule StorageAgent do
 
     case StorageOperation.delete(file_path) do
       :ok ->
-        Logger.info("Deleted object from bucket=#{bucket}, key=#{key}")
+        Logger.debug("deleted object from bucket=#{bucket}, key=#{key}")
         {:reply, :ok, state}
 
       {:error, reason} ->
-        Logger.error("Failed to delete object from bucket=#{bucket}, key=#{key}: #{reason}")
+        Logger.error("failed to delete object from bucket=#{bucket}, key=#{key}: #{reason}")
         {:reply, {:error, reason}, state}
     end
   end
