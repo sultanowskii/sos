@@ -4,16 +4,16 @@ defmodule StorageAgent do
   """
   use GenServer
 
-  def start_link do
+  def start_link(config) do
     GenServer.start_link(
       __MODULE__,
-      :ok,
-      name: {:global, "storage_#{:rand.uniform(100_000_000)}"}
+      config,
+      name: {:global, {:storage_agent, "#{config.client_id}"}}
     )
   end
 
-  def init(:ok) do
-    {:ok, nil}
+  def init(config) do
+    {:ok, config}
   end
 
   def handle_call(:health_check, _from, state) do

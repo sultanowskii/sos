@@ -9,12 +9,14 @@ defmodule StorageAgent.Argparser do
       OptionParser.parse!(
         args,
         strict: [
-          brain_name: :string
+          brain_name: :string,
+          client_id: :string
         ]
       )
 
     config = %Config{
-      brain_name: parsed[:brain_name]
+      brain_name: parsed[:brain_name],
+      client_id: parsed[:client_id]
     }
 
     validate!(config)
@@ -22,12 +24,12 @@ defmodule StorageAgent.Argparser do
 
   @spec validate!(Config.t()) :: Config.t()
   def validate!(config) do
-    case config.brain_name do
-      nil ->
-        raise %OptionParser.ParseError{message: "--brain-name is required"}
+    if config.brain_name == nil do
+      raise %OptionParser.ParseError{message: "--brain-name is required"}
+    end
 
-      _ ->
-        nil
+    if config.client_id == nil do
+      raise %OptionParser.ParseError{message: "--client-id is required"}
     end
 
     config

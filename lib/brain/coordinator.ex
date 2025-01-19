@@ -18,26 +18,38 @@ defmodule Brain.Coordinator do
   # A typical way to set up a periodic work:
   # handle_info/2 + Process.send_after
   def handle_info(:check_workers_health, state) do
-    case :global.registered_names() do
+    case registered_storage_agents() do
       [] ->
         IO.puts("No worker is online")
 
       workers = [_ | _] ->
-        for worker_pid <- workers do
-          result = GenServer.call({:global, worker_pid}, :health_check)
+        for worker <- workers do
+          result = GenServer.call({:global, worker}, :health_check)
+
+          {:storage_agent, worker_name} = worker
 
           case result do
             :ok ->
-              IO.puts("#{worker_pid} is alive")
+              IO.puts("#{worker_name} is alive")
 
             _ ->
-              IO.puts("#{worker_pid} isn't alive")
+              IO.puts("#{worker_name} isn't alive")
           end
         end
     end
 
     schedule_workers_health_check()
     {:noreply, state}
+  end
+
+  defp registered_storage_agents do
+    :global.registered_names()
+    |> Enum.filter(fn name ->
+      case name do
+        {:storage_agent, _} -> true
+        _ -> false
+      end
+    end)
   end
 
   defp schedule_workers_health_check do

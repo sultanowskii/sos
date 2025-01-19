@@ -4,8 +4,9 @@ defmodule StorageAgent.Config do
   """
 
   @type t :: %StorageAgent.Config{
-          brain_name: String.t()
+          brain_name: String.t(),
+          client_id: String.t()
         }
 
-  defstruct brain_name: ""
+  defstruct brain_name: "", client_id: ""
 end

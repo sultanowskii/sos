@@ -15,10 +15,18 @@ defmodule StorageAgent.Cmd do
 
     case connected do
       true ->
-        StorageAgent.start_link()
+        IO.puts("connected to the brain")
+
+        children = [
+          {StorageAgent, config}
+        ]
+
+        opts = [strategy: :one_for_one, name: StorageAgent.Supervisor]
+
+        Supervisor.start_link(children, opts)
 
       false ->
-        UIO.eputs("Can't connect to the brain")
+        UIO.eputs("can't connect to the brain")
     end
   rescue
     e in OptionParser.ParseError ->

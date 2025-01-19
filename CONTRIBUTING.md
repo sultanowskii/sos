@@ -85,7 +85,7 @@ Terminal 2:
 elixir \
     --name client@127.0.0.1 \
     --cookie cookie-example \
-    -S mix run -- storage-agent --brain-name server@127.0.0.1
+    -S mix run -- storage-agent --brain-name server@127.0.0.1 --client-id sherlock-holmes
 ```
 
 ### Docker
@@ -146,5 +146,5 @@ Inside storage agent container:
 elixir \
     --name client@sos.client \
     --cookie cookie-example \
-    -S mix run -- storage-agent --brain-name server@sos.server
+    -S mix run -- storage-agent --brain-name server@sos.server --client-id sherlock-holmes
 ```
