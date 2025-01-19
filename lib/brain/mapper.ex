@@ -7,7 +7,7 @@ defmodule Brain.Mapper do
 
   def map_resp_list_buckets(data) do
     xml_bucket_list =
-      Enum.each(
+      Enum.map(
         data.buckets,
         fn bucket ->
           element(
@@ -31,7 +31,7 @@ defmodule Brain.Mapper do
 
   def map_resp_list_objects(data) do
     xml_object_list =
-      Enum.each(
+      Enum.map(
         data.contents,
         fn c ->
           element(

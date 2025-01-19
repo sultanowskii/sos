@@ -3,6 +3,7 @@ defmodule Brain.Coordinator do
   Coordinator.
   """
   use GenServer
+  require Logger
 
   @health_check_interval 10_000
 
@@ -52,7 +53,7 @@ defmodule Brain.Coordinator do
   def handle_info(:check_agents_health, state) do
     case alive_storage_agents() do
       [] ->
-        IO.puts("No worker is online")
+        Logger.error("No worker is online")
 
       agents = [_ | _] ->
         for agent <- agents do
@@ -62,10 +63,10 @@ defmodule Brain.Coordinator do
 
           case result do
             :ok ->
-              IO.puts("#{agent_name} is alive")
+              Logger.debug("#{agent_name} is alive")
 
             _ ->
-              IO.puts("#{agent_name} isn't alive")
+              Logger.debug("#{agent_name} isn't alive")
           end
         end
     end
