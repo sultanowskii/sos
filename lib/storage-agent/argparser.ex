@@ -10,16 +10,20 @@ defmodule StorageAgent.Argparser do
         args,
         strict: [
           brain_name: :string,
-          client_id: :string
+          client_id: :string,
+          directory: :string
         ]
       )
 
     config = %Config{
       brain_name: parsed[:brain_name],
-      client_id: parsed[:client_id]
+      client_id: parsed[:client_id],
+      directory: parsed[:directory]
     }
 
-    validate!(config)
+    config
+    |> validate!()
+    |> set_defaults()
   end
 
   @spec validate!(Config.t()) :: Config.t()
@@ -32,6 +36,14 @@ defmodule StorageAgent.Argparser do
       raise %OptionParser.ParseError{message: "--client-id is required"}
     end
 
+    config
+  end
+
+  def set_defaults(%Config{directory: nil} = config) do
+    Map.put(config, :directory, "#{System.user_home()}/.sos-data")
+  end
+
+  def set_defaults(config) do
     config
   end
 end
