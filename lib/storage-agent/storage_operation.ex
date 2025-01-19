@@ -25,9 +25,9 @@ defmodule StorageOperation do
 
   def read(file_path) do
     case File.read(file_path) do
-      {:ok, data} ->
+      {:ok, binary_data} ->
         Logger.info("Successfully read data from #{file_path}")
-        {:ok, data}
+        {:ok, binary_data}
 
       {:error, reason} ->
         Logger.error("Failed to read data from #{file_path}: #{reason}")
