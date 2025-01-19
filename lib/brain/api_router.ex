@@ -1,11 +1,13 @@
-import XmlBuilder
-
 defmodule Brain.ApiRouter do
   @moduledoc """
   API Endpoints router.
   """
+  alias Brain.Mapper
+  alias Brain.Service
+
   use Plug.Router
   use Plug.ErrorHandler
+
   require Logger
 
   plug(:match)
@@ -24,32 +26,12 @@ defmodule Brain.ApiRouter do
     params = conn.query_params
     prefix = params["prefix"]
 
-    # TODO: DB
-    data =
-      element(
-        :ListAllMyBucketsResult,
-        [
-          element(
-            :Buckets,
-            [
-              element(
-                :Bucket,
-                [
-                  element(:CreationDate, "some date"),
-                  element(:Name, "test")
-                ]
-              )
-            ]
-          ),
-          element(
-            :Prefix,
-            prefix
-          )
-        ]
-      )
+    resp =
+      Service.list_buckets(prefix)
+      |> Mapper.map_resp_list_buckets()
+      |> XmlBuilder.generate()
 
-    xml_resp = data |> XmlBuilder.generate()
-    send_resp(conn, 200, xml_resp)
+    send_resp(conn, 200, resp)
   end
 
   # ListObjectsV2
@@ -62,51 +44,24 @@ defmodule Brain.ApiRouter do
     _list_type = params["list-type"]
     prefix = params["prefix"]
 
-    # TODO: DB
-    data =
-      element(
-        :ListBucketResult,
-        [
-          element(:Name, "bucket name"),
-          element(:Prefix, prefix),
-          element(:KeyCount, 123),
-          element(:IsTruncated, false),
-          element(
-            :Contents,
-            [
-              element(:Key, "some-key.txt"),
-              element(:LastModified, "timestamp!!"),
-              element(:Size, 1337),
-              element(:StorageClass, "STANDARD")
-            ]
-          ),
-          element(
-            :Contents,
-            [
-              element(:Key, "some-other-key.pdf"),
-              element(:LastModified, "other timestamp"),
-              element(:Size, 228),
-              element(:StorageClass, "STANDARD")
-            ]
-          )
-        ]
-      )
+    resp =
+      Service.list_objects(prefix)
+      |> Mapper.map_resp_list_objects()
+      |> XmlBuilder.generate()
 
-    xml_resp = data |> XmlBuilder.generate()
-
-    send_resp(conn, 200, xml_resp)
+    send_resp(conn, 200, resp)
   end
 
   # CreateBucket
   put "/:bucket" do
-    # TODO: DB
+    Service.create_bucket(bucket)
     conn |> put_resp_header("location", "/#{bucket}")
     send_resp(conn, 200, "")
   end
 
   # DeleteBucket
   delete "/:bucket" do
-    # TODO: DB
+    Service.delete_bucket(bucket)
     send_resp(conn, 204, "")
   end
 
@@ -115,76 +70,74 @@ defmodule Brain.ApiRouter do
   # - x-amz-copy-source
   put "/:bucket/*key_parts" do
     key = key_from_tokens(key_parts)
-
     conn = fetch_query_params(conn)
-
     copy_source = conn |> get_req_header("x-amz-copy-source")
 
-    case coordinator() do
-      {:ok, c} ->
-        if copy_source |> Enum.empty?() do
-          # PutObject
-          _res = GenServer.call(c, {:put_object, bucket, key})
-          send_resp(conn, 200, "")
-        else
-          # CopyObject
-          parse_result = parse_path(copy_source)
+    case copy_source do
+      [] ->
+        # PutObject
+        result = Service.put_object(bucket, key)
 
-          case parse_result do
-            {:err, message} ->
-              send_resp(conn, 400, message)
+        case result do
+          :ok ->
+            send_resp(conn, 200, "")
 
-            {source_bucket, source_key} ->
-              _res =
-                GenServer.call(
-                  c,
-                  {:copy_object, bucket, key, source_bucket, source_key}
-                )
-
-              data =
-                element(
-                  :CopyObjectResult,
-                  [
-                    element(:LastModified, "timestamp!!"),
-                    element(:ChecksumSHA1, "123456789")
-                  ]
-                )
-
-              xml_resp = data |> XmlBuilder.generate()
-              send_resp(conn, 200, xml_resp)
-          end
+          e = {:error, _} ->
+            handle_error(conn, e)
         end
 
-      :err ->
-        error_coordinator_not_found_in_registry(conn)
+      _ ->
+        # CopyObject
+        parse_result = parse_path(copy_source)
+
+        case parse_result do
+          {:err, message} ->
+            send_resp(conn, 400, message)
+
+          {source_bucket, source_key} ->
+            result = Service.copy_object(source_bucket, source_key, bucket, key)
+
+            case result do
+              {:ok, raw} ->
+                resp =
+                  raw
+                  |> Mapper.map_resp_copy_object()
+                  |> XmlBuilder.generate()
+
+                send_resp(conn, 200, resp)
+
+              e = {:error, _} ->
+                handle_error(conn, e)
+            end
+        end
     end
   end
 
   # GetObject
   get "/:bucket/*key_parts" do
     key = key_from_tokens(key_parts)
+    result = Service.get_object(bucket, key)
 
-    case coordinator() do
-      {:ok, c} ->
-        res = GenServer.call(c, {:get_object, bucket, key})
-        send_resp(conn, 200, res)
+    case result do
+      {:ok, data} ->
+        send_resp(conn, 200, data)
 
-      :err ->
-        error_coordinator_not_found_in_registry(conn)
+      e = {:error, _} ->
+        handle_error(conn, e)
     end
   end
 
   # DeleteObject
   delete "/:bucket/*key_parts" do
     key = key_from_tokens(key_parts)
+    result = Service.delete_object(bucket, key)
 
-    case coordinator() do
-      {:ok, c} ->
-        _res = GenServer.call(c, {:delete_object, bucket, key})
+    case result do
+      :ok ->
         send_resp(conn, 204, "")
 
-      :err ->
-        error_coordinator_not_found_in_registry(conn)
+      e = {:error, _} ->
+        handle_error(conn, e)
     end
   end
 
@@ -194,9 +147,12 @@ defmodule Brain.ApiRouter do
     send_resp(conn, 404, "{}")
   end
 
-  defp error_coordinator_not_found_in_registry(conn) do
-    Logger.warning("coordinator isn't found in registry")
-    send_resp(conn, 503, "service unavailable")
+  defp handle_error(conn, e) do
+    case e do
+      {:error, :coordinator_unavailable} ->
+        Logger.warning("coordinator isn't found in registry")
+        send_resp(conn, 503, "service unavailable")
+    end
   end
 
   defp parse_path(s) do
@@ -210,13 +166,6 @@ defmodule Brain.ApiRouter do
 
       _ ->
         {:err, "invalid parameter"}
-    end
-  end
-
-  defp coordinator do
-    case Registry.lookup(BrainRegistry, :coordinator) do
-      [] -> :err
-      [{pid, _} | _] -> {:ok, pid}
     end
   end
 end
