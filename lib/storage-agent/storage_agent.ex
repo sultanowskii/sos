@@ -40,8 +40,7 @@ defmodule StorageAgent do
   end
 
   def handle_call({:put_object, bucket, key, data}, _from, state) do
-    dir_path = "#{@storage_dir}/#{bucket}"
-    file_path = "#{dir_path}/#{key}"
+    file_path = get_hashed_file_path(bucket, key)
 
     case StorageOperation.write(file_path, data) do
       :ok ->
@@ -55,7 +54,7 @@ defmodule StorageAgent do
   end
 
   def handle_call({:get_object, bucket, key}, _from, state) do
-    file_path = "#{@storage_dir}/#{bucket}/#{key}"
+    file_path = get_hashed_file_path(bucket, key)
 
     case StorageOperation.read(file_path) do
       {:ok, binary_data} ->
@@ -69,7 +68,7 @@ defmodule StorageAgent do
   end
 
   def handle_call({:delete_object, bucket, key}, _from, state) do
-    file_path = "#{@storage_dir}/#{bucket}/#{key}"
+    file_path = get_hashed_file_path(bucket, key)
 
     case StorageOperation.delete(file_path) do
       :ok ->
@@ -80,5 +79,18 @@ defmodule StorageAgent do
         Logger.error("failed to delete object from bucket=#{bucket}, key=#{key}: #{reason}")
         {:reply, {:error, reason}, state}
     end
+  end
+
+  defp get_hashed_file_path(bucket, key) do
+    file_extension = Path.extname(key)
+
+    filename = "#{hash_key(bucket, key)}#{file_extension}"
+
+    file_path = "#{@storage_dir}/#{bucket}/#{filename}"
+  end
+
+  defp hash_key(bucket, key) do
+    :crypto.hash(:sha512, "#{bucket}/#{key}")
+    |> Base.encode16(case: :lower)
   end
 end
