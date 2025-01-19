@@ -48,6 +48,33 @@ architecture-beta
     storage4{group}:T -- B:junctionWorkersRight
 ```
 
+
+Database diagrams  
+```mermaid
+erDiagram
+    STORAGE {
+        integer id PK "identifier"
+        string name "name"
+        string availability "availability"
+    }
+
+    OBJECT {
+        integer id PK "identifier"
+        string name "name"
+        integer bucket_id FK "bucket identifier"
+        string meta_info "meta information"
+    }
+
+    BUCKET {
+        integer id PK "identifier"
+        string name "name"
+    }
+
+
+    STORAGE ||--o| OBJECT : OneToMany
+    OBJECT ||--|{ BUCKET : ManyToOne
+```
+
 - `HTTP API` - Partially S3-compatible API 'frontend'
 - `Coordinator` - Keeps track of workers and entities. Is responsible for all operations.
 - `DB` - Database where all information regarding buckets, objects, etc is stored.
