@@ -5,6 +5,7 @@ defmodule Brain.ApiRouter do
   API Endpoints router.
   """
   use Plug.Router
+  use Plug.ErrorHandler
   require Logger
 
   plug(:match)
@@ -23,6 +24,7 @@ defmodule Brain.ApiRouter do
     params = conn.query_params
     prefix = params["prefix"]
 
+    # TODO: DB
     data =
       element(
         :ListAllMyBucketsResult,
@@ -60,6 +62,7 @@ defmodule Brain.ApiRouter do
     _list_type = params["list-type"]
     prefix = params["prefix"]
 
+    # TODO: DB
     data =
       element(
         :ListBucketResult,
@@ -96,63 +99,64 @@ defmodule Brain.ApiRouter do
 
   # CreateBucket
   put "/:bucket" do
+    # TODO: DB
     conn |> put_resp_header("location", "/#{bucket}")
     send_resp(conn, 200, "")
   end
 
   # DeleteBucket
   delete "/:bucket" do
+    # TODO: DB
     send_resp(conn, 204, "")
-  end
-
-  defp parse_path(s) do
-    s
-    |> Enum.at(0)
-    |> String.trim("/")
-    |> String.split("/")
-    |> case do
-      [source_bucket | source_key_parts] ->
-        {source_bucket, key_from_tokens(source_key_parts)}
-
-      _ ->
-        {:error, "invalid parameter"}
-    end
   end
 
   # PutObject / CopyObject
   # Supported headers:
   # - x-amz-copy-source
   put "/:bucket/*key_parts" do
-    _key = key_from_tokens(key_parts)
+    key = key_from_tokens(key_parts)
 
     conn = fetch_query_params(conn)
 
     copy_source = conn |> get_req_header("x-amz-copy-source")
 
-    if copy_source |> Enum.empty?() do
-      # PutObject
-      send_resp(conn, 200, "")
-    else
-      # CopyObject
-      parse_result = parse_path(copy_source)
+    case coordinator() do
+      {:ok, c} ->
+        if copy_source |> Enum.empty?() do
+          # PutObject
+          _res = GenServer.call(c, {:put_object, bucket, key})
+          send_resp(conn, 200, "")
+        else
+          # CopyObject
+          parse_result = parse_path(copy_source)
 
-      case parse_result do
-        {:error, message} ->
-          send_resp(conn, 400, message)
+          case parse_result do
+            {:err, message} ->
+              send_resp(conn, 400, message)
 
-        {_source_bucket, _source_key} ->
-          data =
-            element(
-              :CopyObjectResult,
-              [
-                element(:LastModified, "timestamp!!"),
-                element(:ChecksumSHA1, "123456789")
-              ]
-            )
+            {source_bucket, source_key} ->
+              _res =
+                GenServer.call(
+                  c,
+                  {:copy_object, bucket, key, source_bucket, source_key}
+                )
 
-          xml_resp = data |> XmlBuilder.generate()
-          send_resp(conn, 200, xml_resp)
-      end
+              data =
+                element(
+                  :CopyObjectResult,
+                  [
+                    element(:LastModified, "timestamp!!"),
+                    element(:ChecksumSHA1, "123456789")
+                  ]
+                )
+
+              xml_resp = data |> XmlBuilder.generate()
+              send_resp(conn, 200, xml_resp)
+          end
+        end
+
+      :err ->
+        error_coordinator_not_found_in_registry(conn)
     end
   end
 
@@ -165,16 +169,23 @@ defmodule Brain.ApiRouter do
         res = GenServer.call(c, {:get_object, bucket, key})
         send_resp(conn, 200, res)
 
-      {:err, e} ->
-        send_resp(conn, 500, e)
+      :err ->
+        error_coordinator_not_found_in_registry(conn)
     end
   end
 
   # DeleteObject
   delete "/:bucket/*key_parts" do
-    _key = key_from_tokens(key_parts)
+    key = key_from_tokens(key_parts)
 
-    send_resp(conn, 204, "")
+    case coordinator() do
+      {:ok, c} ->
+        _res = GenServer.call(c, {:delete_object, bucket, key})
+        send_resp(conn, 204, "")
+
+      :err ->
+        error_coordinator_not_found_in_registry(conn)
+    end
   end
 
   match _ do
@@ -183,9 +194,28 @@ defmodule Brain.ApiRouter do
     send_resp(conn, 404, "{}")
   end
 
+  defp error_coordinator_not_found_in_registry(conn) do
+    Logger.warning("coordinator isn't found in registry")
+    send_resp(conn, 503, "service unavailable")
+  end
+
+  defp parse_path(s) do
+    s
+    |> Enum.at(0)
+    |> String.trim("/")
+    |> String.split("/")
+    |> case do
+      [source_bucket | source_key_parts] ->
+        {source_bucket, key_from_tokens(source_key_parts)}
+
+      _ ->
+        {:err, "invalid parameter"}
+    end
+  end
+
   defp coordinator do
     case Registry.lookup(BrainRegistry, :coordinator) do
-      [] -> {:err, "coordinator isn't found in registry"}
+      [] -> :err
       [{pid, _} | _] -> {:ok, pid}
     end
   end
