@@ -29,7 +29,7 @@ defmodule StorageOperationTest do
           StorageOperation.write(@test_file_path, data)
         end)
 
-      assert log =~ "Successfully wrote data to #{@test_file_path}"
+      assert log =~ "successfully wrote data to #{@test_file_path}"
     end
   end
 
@@ -50,11 +50,11 @@ defmodule StorageOperationTest do
           StorageOperation.read(@test_file_path)
         end)
 
-      assert log =~ "Successfully read data from #{@test_file_path}"
+      assert log =~ "successfully read data from #{@test_file_path}"
     end
 
     test "returns error if file does not exist" do
-      assert {:error, "Failed to read data"} = StorageOperation.read(@test_file_path)
+      assert {:error, "failed to read data"} = StorageOperation.read(@test_file_path)
     end
 
     test "logs error if read fails" do
@@ -63,7 +63,7 @@ defmodule StorageOperationTest do
           StorageOperation.read(@test_file_path)
         end)
 
-      assert log =~ "Failed to read data from #{@test_file_path}:"
+      assert log =~ "failed to read data from #{@test_file_path}:"
     end
   end
 
@@ -84,11 +84,11 @@ defmodule StorageOperationTest do
           StorageOperation.delete(@test_file_path)
         end)
 
-      assert log =~ "Successfully deleted file #{@test_file_path}"
+      assert log =~ "successfully deleted file #{@test_file_path}"
     end
 
     test "returns error if file does not exist" do
-      assert {:error, "Failed to delete file"} = StorageOperation.delete(@test_file_path)
+      assert {:error, "failed to delete file"} = StorageOperation.delete(@test_file_path)
     end
   end
 end
