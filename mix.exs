@@ -14,7 +14,7 @@ defmodule SOS.MixProject do
   def application do
     [
       mod: {SOS, []},
-      extra_applications: [:logger]
+      extra_applications: [:logger, :mnesia]
     ]
   end
 
