@@ -5,6 +5,7 @@ defmodule Brain.Coordinator do
   use GenServer
   require Logger
 
+  @err_agents_unavailable :agents_unavailable
   @health_check_interval 10_000
 
   def start_link(_) do
@@ -24,27 +25,52 @@ defmodule Brain.Coordinator do
   end
 
   @impl true
-  def handle_call({:put_object, bucket, key, data}, _from, _state) do
-    agent = pick_random_agent()
+  def handle_call({:put_object, bucket, key, data}, _from, state) do
+    case pick_random_agent() do
+      {:ok, agent} ->
+        # TODO: compose the response (success/failure)
+        result = GenServer.call({:global, agent}, {:put_object, bucket, key, data})
 
-    # TODO: compose the response (success/failure)
-    GenServer.call({:global, agent}, {:put_object, bucket, key, data})
+        {:reply, result, state}
+
+      e = {:error, @err_agents_unavailable} ->
+        {:reply, e, state}
+    end
   end
 
   @impl true
-  def handle_call({:get_object, bucket, key}, _from, _state) do
+  def handle_call({:get_object, bucket, key}, _from, state) do
     # TODO: take from DB by (bucket, key)
     agent = nil
     # TODO: compose the response (success/failure)
-    GenServer.call({:global, agent}, {:get_object, bucket, key})
+    result = GenServer.call({:global, agent}, {:get_object, bucket, key})
+
+    {:reply, result, state}
   end
 
   @impl true
-  def handle_call({:delete_object, bucket, key}, _from, _state) do
+  def handle_call({:delete_object, bucket, key}, _from, state) do
     agent = nil
     # TODO: take from DB by (bucket, key)
     # TODO: compose the response (success/failure)
-    GenServer.call({:global, agent}, {:delete_object, bucket, key})
+    result = GenServer.call({:global, agent}, {:delete_object, bucket, key})
+
+    {:reply, result, state}
+  end
+
+  @impl true
+  def handle_call({:copy_object, source_bucket, source_key, dest_bucket, dest_key}, _from, state) do
+    get_result = GenServer.call(self(), {:get_object, source_bucket, source_key})
+
+    case get_result do
+      {:ok, data} ->
+        put_result = GenServer.call(self(), {:put_object, dest_bucket, dest_key, data})
+
+        {:reply, put_result, state}
+
+      {:error, _} ->
+        {:reply, get_result, state}
+    end
   end
 
   # A typical way to set up a periodic work:
@@ -53,7 +79,7 @@ defmodule Brain.Coordinator do
   def handle_info(:check_agents_health, state) do
     case alive_storage_agents() do
       [] ->
-        Logger.error("No worker is online")
+        Logger.error("No agent is online")
 
       agents = [_ | _] ->
         for agent <- agents do
@@ -78,13 +104,19 @@ defmodule Brain.Coordinator do
   defp pick_random_agent do
     agents = alive_storage_agents()
 
-    index =
-      agents
-      |> Enum.count()
-      |> :rand.uniform()
-      |> Kernel.-(1)
+    case agents do
+      [] ->
+        {:error, @err_agents_unavailable}
 
-    Enum.at(agents, index)
+      [_] ->
+        index =
+          agents
+          |> Enum.count()
+          |> :rand.uniform()
+          |> Kernel.-(1)
+
+        {:ok, Enum.at(agents, index)}
+    end
   end
 
   defp alive_storage_agents do

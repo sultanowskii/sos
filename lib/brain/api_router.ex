@@ -76,11 +76,17 @@ defmodule Brain.ApiRouter do
     case copy_source do
       [] ->
         # PutObject
-        result = Service.put_object(bucket, key)
+        case Plug.Conn.read_body(conn) do
+          {:ok, request_data, conn} ->
+            result = Service.put_object(bucket, key, request_data)
 
-        case result do
-          :ok ->
-            send_resp(conn, 200, "")
+            case result do
+              :ok ->
+                send_resp(conn, 200, "")
+
+              e = {:error, _} ->
+                handle_error(conn, e)
+            end
 
           e = {:error, _} ->
             handle_error(conn, e)
@@ -91,7 +97,7 @@ defmodule Brain.ApiRouter do
         parse_result = parse_path(copy_source)
 
         case parse_result do
-          {:err, message} ->
+          {:error, message} ->
             send_resp(conn, 400, message)
 
           {source_bucket, source_key} ->
@@ -150,8 +156,16 @@ defmodule Brain.ApiRouter do
   defp handle_error(conn, e) do
     case e do
       {:error, :coordinator_unavailable} ->
-        Logger.warning("coordinator isn't found in registry")
+        Logger.warning("API: coordinator isn't found in registry")
         send_resp(conn, 503, "service unavailable")
+
+      {:error, :agents_unavailable} ->
+        Logger.warning("API: no agent is available")
+        send_resp(conn, 503, "service unavailable")
+
+      _ ->
+        Logger.warning("API: unexpected error #{inspect(e)}")
+        send_resp(conn, 500, "unexpected error")
     end
   end
 
@@ -165,7 +179,7 @@ defmodule Brain.ApiRouter do
         {source_bucket, key_from_tokens(source_key_parts)}
 
       _ ->
-        {:err, "invalid parameter"}
+        {:error, "invalid parameter"}
     end
   end
 end
