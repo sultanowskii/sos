@@ -5,8 +5,6 @@ defmodule StorageAgent do
   use GenServer
   require Logger
 
-  @storage_dir "#{System.user_home()}/#{__MODULE__}"
-
   def start_link(config) do
     GenServer.start_link(
       __MODULE__,
@@ -20,17 +18,17 @@ defmodule StorageAgent do
   end
 
   defp init_storage(config) do
-    case File.mkdir_p(@storage_dir) do
+    case File.mkdir_p(config.directory) do
       :ok ->
-        Logger.debug("directory with name #{@storage_dir} created successfully")
+        Logger.debug("directory with name #{config.directory} created successfully")
         {:ok, config}
 
       {:error, :eexist} ->
-        Logger.debug("directory with name #{@storage_dir} already exists")
+        Logger.debug("directory with name #{config.directory} already exists")
         {:ok, config}
 
       {:error, reason} ->
-        Logger.error("failed to create directory with name #{@storage_dir}: #{reason}")
+        Logger.error("failed to create directory with name #{config.directory}: #{reason}")
         {:stop, reason}
     end
   end
@@ -40,7 +38,7 @@ defmodule StorageAgent do
   end
 
   def handle_call({:put_object, bucket, key, data}, _from, state) do
-    file_path = get_hashed_file_path(bucket, key)
+    file_path = get_hashed_file_path(state, bucket, key)
 
     case StorageOperation.write(file_path, data) do
       :ok ->
@@ -54,7 +52,7 @@ defmodule StorageAgent do
   end
 
   def handle_call({:get_object, bucket, key}, _from, state) do
-    file_path = get_hashed_file_path(bucket, key)
+    file_path = get_hashed_file_path(state, bucket, key)
 
     case StorageOperation.read(file_path) do
       {:ok, binary_data} ->
@@ -68,7 +66,7 @@ defmodule StorageAgent do
   end
 
   def handle_call({:delete_object, bucket, key}, _from, state) do
-    file_path = get_hashed_file_path(bucket, key)
+    file_path = get_hashed_file_path(state, bucket, key)
 
     case StorageOperation.delete(file_path) do
       :ok ->
@@ -81,12 +79,11 @@ defmodule StorageAgent do
     end
   end
 
-  defp get_hashed_file_path(bucket, key) do
+  defp get_hashed_file_path(config, bucket, key) do
     file_extension = Path.extname(key)
-
     filename = "#{hash_key(bucket, key)}#{file_extension}"
-
-    file_path = "#{@storage_dir}/#{bucket}/#{filename}"
+    file_path = "#{config.directory}/#{bucket}/#{filename}"
+    file_path
   end
 
   defp hash_key(bucket, key) do
