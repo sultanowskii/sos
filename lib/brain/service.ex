@@ -58,13 +58,12 @@ defmodule Brain.Service do
     # TODO: DB
   end
 
-  def put_object(bucket, key) do
+  def put_object(bucket, key, data) do
     case coordinator() do
       {:ok, c} ->
-        GenServer.call(c, {:put_object, bucket, key})
-        :ok
+        GenServer.call(c, {:put_object, bucket, key, data})
 
-      :err ->
+      :error ->
         {:error, @err_coordinator_unavailable}
     end
   end
@@ -85,7 +84,7 @@ defmodule Brain.Service do
           }
         }
 
-      :err ->
+      :error ->
         {:error, @err_coordinator_unavailable}
     end
   end
@@ -96,7 +95,7 @@ defmodule Brain.Service do
         data = GenServer.call(c, {:get_object, bucket, key})
         {:ok, data}
 
-      :err ->
+      :error ->
         {:error, @err_coordinator_unavailable}
     end
   end
@@ -107,14 +106,14 @@ defmodule Brain.Service do
         GenServer.call(c, {:delete_object, bucket, key})
         :ok
 
-      :err ->
+      :error ->
         {:error, @err_coordinator_unavailable}
     end
   end
 
   defp coordinator do
     case Registry.lookup(BrainRegistry, :coordinator) do
-      [] -> :err
+      [] -> :error
       [{pid, _} | _] -> {:ok, pid}
     end
   end
