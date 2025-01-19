@@ -160,7 +160,14 @@ defmodule Brain.ApiRouter do
   get "/:bucket/*key_parts" do
     key = key_from_tokens(key_parts)
 
-    send_resp(conn, 200, "I'm an object key=#{key} (in #{bucket} bucket)!")
+    case coordinator() do
+      {:ok, c} ->
+        res = GenServer.call(c, {:get_object, bucket, key})
+        send_resp(conn, 200, res)
+
+      {:err, e} ->
+        send_resp(conn, 500, e)
+    end
   end
 
   # DeleteObject
@@ -174,5 +181,12 @@ defmodule Brain.ApiRouter do
     request_url = request_url(conn)
     Logger.debug("attempted to access #{inspect(request_url)}, #{inspect(conn)}")
     send_resp(conn, 404, "{}")
+  end
+
+  defp coordinator do
+    case Registry.lookup(BrainRegistry, :coordinator) do
+      [] -> {:err, "coordinator isn't found in registry"}
+      [{pid, _} | _] -> {:ok, pid}
+    end
   end
 end
