@@ -15,6 +15,8 @@ defmodule Brain.Cmd do
 
     opts = [strategy: :one_for_one, name: Brain.Supervisor]
 
+    Registry.start_link(name: BrainRegistry, keys: :unique)
+
     Logger.info("Starting application...")
 
     Supervisor.start_link(children, opts)

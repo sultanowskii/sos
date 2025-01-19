@@ -1,10 +1,13 @@
-import XmlBuilder
-
 defmodule Brain.ApiRouter do
   @moduledoc """
   API Endpoints router.
   """
+  alias Brain.Mapper
+  alias Brain.Service
+
   use Plug.Router
+  use Plug.ErrorHandler
+
   require Logger
 
   plug(:match)
@@ -23,31 +26,12 @@ defmodule Brain.ApiRouter do
     params = conn.query_params
     prefix = params["prefix"]
 
-    data =
-      element(
-        :ListAllMyBucketsResult,
-        [
-          element(
-            :Buckets,
-            [
-              element(
-                :Bucket,
-                [
-                  element(:CreationDate, "some date"),
-                  element(:Name, "test")
-                ]
-              )
-            ]
-          ),
-          element(
-            :Prefix,
-            prefix
-          )
-        ]
-      )
+    resp =
+      Service.list_buckets(prefix)
+      |> Mapper.map_resp_list_buckets()
+      |> XmlBuilder.generate()
 
-    xml_resp = data |> XmlBuilder.generate()
-    send_resp(conn, 200, xml_resp)
+    send_resp(conn, 200, resp)
   end
 
   # ListObjectsV2
@@ -60,49 +44,115 @@ defmodule Brain.ApiRouter do
     _list_type = params["list-type"]
     prefix = params["prefix"]
 
-    data =
-      element(
-        :ListBucketResult,
-        [
-          element(:Name, "bucket name"),
-          element(:Prefix, prefix),
-          element(:KeyCount, 123),
-          element(:IsTruncated, false),
-          element(
-            :Contents,
-            [
-              element(:Key, "some-key.txt"),
-              element(:LastModified, "timestamp!!"),
-              element(:Size, 1337),
-              element(:StorageClass, "STANDARD")
-            ]
-          ),
-          element(
-            :Contents,
-            [
-              element(:Key, "some-other-key.pdf"),
-              element(:LastModified, "other timestamp"),
-              element(:Size, 228),
-              element(:StorageClass, "STANDARD")
-            ]
-          )
-        ]
-      )
+    resp =
+      Service.list_objects(prefix)
+      |> Mapper.map_resp_list_objects()
+      |> XmlBuilder.generate()
 
-    xml_resp = data |> XmlBuilder.generate()
-
-    send_resp(conn, 200, xml_resp)
+    send_resp(conn, 200, resp)
   end
 
   # CreateBucket
   put "/:bucket" do
+    Service.create_bucket(bucket)
     conn |> put_resp_header("location", "/#{bucket}")
     send_resp(conn, 200, "")
   end
 
   # DeleteBucket
   delete "/:bucket" do
+    Service.delete_bucket(bucket)
     send_resp(conn, 204, "")
+  end
+
+  # PutObject / CopyObject
+  # Supported headers:
+  # - x-amz-copy-source
+  put "/:bucket/*key_parts" do
+    key = key_from_tokens(key_parts)
+    conn = fetch_query_params(conn)
+    copy_source = conn |> get_req_header("x-amz-copy-source")
+
+    case copy_source do
+      [] ->
+        # PutObject
+        result = Service.put_object(bucket, key)
+
+        case result do
+          :ok ->
+            send_resp(conn, 200, "")
+
+          e = {:error, _} ->
+            handle_error(conn, e)
+        end
+
+      _ ->
+        # CopyObject
+        parse_result = parse_path(copy_source)
+
+        case parse_result do
+          {:err, message} ->
+            send_resp(conn, 400, message)
+
+          {source_bucket, source_key} ->
+            result = Service.copy_object(source_bucket, source_key, bucket, key)
+
+            case result do
+              {:ok, raw} ->
+                resp =
+                  raw
+                  |> Mapper.map_resp_copy_object()
+                  |> XmlBuilder.generate()
+
+                send_resp(conn, 200, resp)
+
+              e = {:error, _} ->
+                handle_error(conn, e)
+            end
+        end
+    end
+  end
+
+  # GetObject
+  get "/:bucket/*key_parts" do
+    key = key_from_tokens(key_parts)
+    result = Service.get_object(bucket, key)
+
+    case result do
+      {:ok, data} ->
+        send_resp(conn, 200, data)
+
+      e = {:error, _} ->
+        handle_error(conn, e)
+    end
+  end
+
+  # DeleteObject
+  delete "/:bucket/*key_parts" do
+    key = key_from_tokens(key_parts)
+    result = Service.delete_object(bucket, key)
+
+    case result do
+      :ok ->
+        send_resp(conn, 204, "")
+
+      e = {:error, _} ->
+        handle_error(conn, e)
+    end
+  end
+
+  match _ do
+    request_url = request_url(conn)
+    Logger.debug("attempted to access #{inspect(request_url)}, #{inspect(conn)}")
+    send_resp(conn, 404, "{}")
+  end
+
+  defp handle_error(conn, e) do
+    case e do
+      {:error, :coordinator_unavailable} ->
+        Logger.warning("coordinator isn't found in registry")
+        send_resp(conn, 503, "service unavailable")
+    end
   end
 
   defp parse_path(s) do
@@ -115,64 +165,7 @@ defmodule Brain.ApiRouter do
         {source_bucket, key_from_tokens(source_key_parts)}
 
       _ ->
-        {:error, "invalid parameter"}
+        {:err, "invalid parameter"}
     end
-  end
-
-  # PutObject / CopyObject
-  # Supported headers:
-  # - x-amz-copy-source
-  put "/:bucket/*key_parts" do
-    _key = key_from_tokens(key_parts)
-
-    conn = fetch_query_params(conn)
-
-    copy_source = conn |> get_req_header("x-amz-copy-source")
-
-    if copy_source |> Enum.empty?() do
-      # PutObject
-      send_resp(conn, 200, "")
-    else
-      # CopyObject
-      parse_result = parse_path(copy_source)
-
-      case parse_result do
-        {:error, message} ->
-          send_resp(conn, 400, message)
-
-        {_source_bucket, _source_key} ->
-          data =
-            element(
-              :CopyObjectResult,
-              [
-                element(:LastModified, "timestamp!!"),
-                element(:ChecksumSHA1, "123456789")
-              ]
-            )
-
-          xml_resp = data |> XmlBuilder.generate()
-          send_resp(conn, 200, xml_resp)
-      end
-    end
-  end
-
-  # GetObject
-  get "/:bucket/*key_parts" do
-    key = key_from_tokens(key_parts)
-
-    send_resp(conn, 200, "I'm an object key=#{key} (in #{bucket} bucket)!")
-  end
-
-  # DeleteObject
-  delete "/:bucket/*key_parts" do
-    _key = key_from_tokens(key_parts)
-
-    send_resp(conn, 204, "")
-  end
-
-  match _ do
-    request_url = request_url(conn)
-    Logger.debug("attempted to access #{inspect(request_url)}, #{inspect(conn)}")
-    send_resp(conn, 404, "{}")
   end
 end

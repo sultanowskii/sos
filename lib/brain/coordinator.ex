@@ -3,6 +3,7 @@ defmodule Brain.Coordinator do
   Coordinator.
   """
   use GenServer
+  require Logger
 
   @health_check_interval 10_000
 
@@ -10,37 +11,49 @@ defmodule Brain.Coordinator do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
+  @impl true
   def init(state) do
+    Registry.register(BrainRegistry, :coordinator, nil)
     schedule_agents_health_check()
     {:ok, state}
   end
 
+  @impl true
+  def terminate(_reason, _state) do
+    Registry.unregister(BrainRegistry, :coordinator)
+  end
+
+  @impl true
   def handle_call({:put_object, bucket, key, data}, _from, _state) do
     agent = pick_random_agent()
 
+    # TODO: compose the response (success/failure)
     GenServer.call({:global, agent}, {:put_object, bucket, key, data})
   end
 
+  @impl true
   def handle_call({:get_object, bucket, key}, _from, _state) do
-    agent = nil
     # TODO: take from DB by (bucket, key)
-
+    agent = nil
+    # TODO: compose the response (success/failure)
     GenServer.call({:global, agent}, {:get_object, bucket, key})
   end
 
+  @impl true
   def handle_call({:delete_object, bucket, key}, _from, _state) do
     agent = nil
     # TODO: take from DB by (bucket, key)
-
+    # TODO: compose the response (success/failure)
     GenServer.call({:global, agent}, {:delete_object, bucket, key})
   end
 
   # A typical way to set up a periodic work:
   # handle_info/2 + Process.send_after
+  @impl true
   def handle_info(:check_agents_health, state) do
     case alive_storage_agents() do
       [] ->
-        IO.puts("No worker is online")
+        Logger.error("No worker is online")
 
       agents = [_ | _] ->
         for agent <- agents do
@@ -50,10 +63,10 @@ defmodule Brain.Coordinator do
 
           case result do
             :ok ->
-              IO.puts("#{agent_name} is alive")
+              Logger.debug("#{agent_name} is alive")
 
             _ ->
-              IO.puts("#{agent_name} isn't alive")
+              Logger.debug("#{agent_name} isn't alive")
           end
         end
     end
