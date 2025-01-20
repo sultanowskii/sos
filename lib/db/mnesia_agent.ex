@@ -50,7 +50,7 @@ defmodule Db.MnesiaAgent do
 
     #adding to object table, where bucket_id is 2 and object_name is "object_name"
     iex> {:ok, pid} = Db.MnesiaAgent.start_link
-    ...> GenServer.call(pid, {:add, Db.Object, {"object_name", 2}})
+    ...> GenServer.call(pid, {:add, Db.Object, {"object_nameAAAA", "bucket_name"}})
     :ok
 
     #adding to storage table where storage_name is "storage_name"
@@ -96,8 +96,8 @@ defmodule Db.MnesiaAgent do
 
     #adding to object table, where bucket_id is 2 and object_name is "object_name"
     iex> {:ok, pid} = Db.MnesiaAgent.start_link
-    ...> GenServer.call(pid, {:add, Db.Object, {"object_name", 2}})
-    ...> GenServer.call(pid, {:delete, Db.Object, {"object_name"}})
+    ...> GenServer.call(pid, {:add, Db.Object, {"object_name", "bucket_name"}})
+    ...> GenServer.call(pid, {:delete, Db.Object, {"object_name", "bucket_name"}})
     :ok
 
     #adding to storage table where storage_name is "storage_name"

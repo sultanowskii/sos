@@ -5,28 +5,28 @@ defmodule Db.Object do
 
   alias Db.MnesiaHelper
   @table :object
-  @index_time 2
 
   def init do
-    MnesiaHelper.init(@table, [:name, :bucket_id, :created_at])
+    MnesiaHelper.init(@table, [:name, :bucket_name_id, :created_at])
   end
 
   def add(record) do
-    # adding data table name and column created at
-    record = Tuple.insert_at(record, @index_time, DateTime.to_string(DateTime.utc_now()))
-    record = Tuple.insert_at(record, 0, @table)
+    {name, bucket_name_id} = record
 
-    MnesiaHelper.add(record)
+    MnesiaHelper.add(
+      {@table, "#{name}#{bucket_name_id}", bucket_name_id, DateTime.to_string(DateTime.utc_now())}
+    )
   end
 
-  def get(name) do
-    record = Tuple.insert_at(name, 0, @table)
-    MnesiaHelper.get(record)
+  def get(record) do
+    {name, bucket_name_id} = record
+    MnesiaHelper.get({@table, "#{name}#{bucket_name_id}"})
   end
 
-  def delete(name) do
-    record = Tuple.insert_at(name, 0, @table)
-    MnesiaHelper.delete(record)
+  @spec delete({any(), any()}) :: :ok | {:error, :not_found | {:transaction_aborted, any()}}
+  def delete(record) do
+    {name, bucket_name_id} = record
+    MnesiaHelper.delete({@table, "#{name}#{bucket_name_id}"})
   end
 
   def get_or_create(_) do

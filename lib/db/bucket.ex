@@ -16,7 +16,6 @@ defmodule Db.Bucket do
     Logger.debug("Adding bucket")
     record = Tuple.insert_at(name, @index_time, DateTime.to_string(DateTime.utc_now()))
     record = Tuple.insert_at(record, 0, @table)
-    Logger.debug("Adding bucket")
 
     MnesiaHelper.add(record)
   end
