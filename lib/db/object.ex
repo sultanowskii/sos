@@ -28,4 +28,8 @@ defmodule Db.Object do
     record = Tuple.insert_at(name, 0, @table)
     MnesiaHelper.delete(record)
   end
+
+  def get_or_create(_) do
+    {:error, :not_supported}
+  end
 end

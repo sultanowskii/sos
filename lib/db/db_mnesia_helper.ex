@@ -20,9 +20,14 @@ defmodule Db.MnesiaHelper do
 
   def get(record) do
     case Mnesia.transaction(fn -> Mnesia.read(record) end) do
-      {:atomic, [record]} -> {:ok, record}
-      {:atomic, []} -> {:error, :not_found}
-      {:aborted, reason} -> {:error, {:transaction_aborted, reason}}
+      {:atomic, [record]} ->
+        {:ok, record}
+
+      {:atomic, []} ->
+        {:error, :not_found}
+
+      {:aborted, reason} ->
+        {:error, {:transaction_aborted, reason}}
     end
   end
 
@@ -37,6 +42,19 @@ defmodule Db.MnesiaHelper do
 
       {:aborted, reason} ->
         {:error, {:transaction_aborted, reason}}
+    end
+  end
+
+  def get_or_create(record) do
+    case get(record) do
+      {:ok, existing_record} ->
+        {:ok, existing_record}
+
+      {:error, :not_found} ->
+        case add(record) do
+          :ok -> {:ok, record}
+          {:error, reason} -> {:error, reason}
+        end
     end
   end
 end

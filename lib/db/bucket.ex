@@ -2,6 +2,7 @@ defmodule Db.Bucket do
   @moduledoc """
    Module for processing operations with bucket enitity
   """
+  require Logger
   alias Db.MnesiaHelper
 
   @table :bucket
@@ -12,8 +13,10 @@ defmodule Db.Bucket do
   end
 
   def add(name) do
+    Logger.debug("Adding bucket")
     record = Tuple.insert_at(name, @index_time, DateTime.to_string(DateTime.utc_now()))
     record = Tuple.insert_at(record, 0, @table)
+    Logger.debug("Adding bucket")
 
     MnesiaHelper.add(record)
   end
@@ -30,8 +33,15 @@ defmodule Db.Bucket do
 
   def get_or_create(name) do
     case get(name) do
-      {:ok, record} -> record
-      {:error, :not_found} -> add(name)
+      {:ok, record} ->
+        Logger.debug("Bucket already exists")
+
+        record
+
+      {:error, :not_found} ->
+        Logger.debug("bucket not found, creating new bucket")
+        IO.puts("Creating new bucket")
+        add(name)
     end
   end
 end

@@ -117,6 +117,10 @@ defmodule Db.MnesiaAgent do
     handle_db_operation(:delete, module, id, state)
   end
 
+  def handle_call({:get_or_create, module, id}, _from, state) do
+    handle_db_operation(:get_or_create, module, id, state)
+  end
+
   defp handle_db_operation(:add, module, record, state) do
     case module.add(record) do
       :ok ->
@@ -144,6 +148,22 @@ defmodule Db.MnesiaAgent do
 
       {:error, reason} ->
         {:reply, {:error, reason}, state}
+    end
+  end
+
+  defp handle_db_operation(:get_or_create, module, id, state) do
+    case module.get_or_create(id) do
+      :ok ->
+        {:reply, :ok, state}
+
+      data when is_tuple(data) ->
+        {:reply, {:ok, data}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+
+      _ ->
+        {:reply, {:error, :unknown}, state}
     end
   end
 end
