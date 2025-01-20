@@ -1,4 +1,4 @@
-defmodule Brain.Service do
+defmodule Brain.ApiSerice do
   @moduledoc """
   Brain service logic.
   """

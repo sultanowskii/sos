@@ -15,7 +15,10 @@ defmodule Brain.Coordinator do
   @impl true
   def init(state) do
     Registry.register(BrainRegistry, :coordinator, nil)
+
     schedule_agents_health_check()
+    shecule_db_health_check()
+
     {:ok, state}
   end
 
@@ -24,12 +27,28 @@ defmodule Brain.Coordinator do
     Registry.unregister(BrainRegistry, :coordinator)
   end
 
+  @doc """
+  Creates a new object in the storage and writes a record to database.
+  If a bucket with specified name doesn't exist, creates a new bucket.
+
+
+  # Examples
+    iex> GenServer.call(Brain.Coordinator, {:put_object, "my_bucket", "my_key.txt", "binary_data"})
+    :ok
+
+  ## Parameters
+    * `bucket` - name of the bucket
+    * `key` - object key
+    * `data` - binary data of the object
+  """
   @impl true
   def handle_call({:put_object, bucket, key, data}, _from, state) do
     case pick_random_agent() do
       {:ok, agent} ->
         # TODO: compose the response (success/failure)
         result = GenServer.call({:global, agent}, {:put_object, bucket, key, data})
+        GenServer.call(Db.MnesiaProvider, {:get_or_create, Db.Bucket, {bucket}})
+        GenServer.call(Db.MnesiaProvider, {:add, Db.Object, {key, bucket}})
 
         {:reply, result, state}
 
@@ -38,24 +57,51 @@ defmodule Brain.Coordinator do
     end
   end
 
+  @doc """
+  Gets an object from the storage by bucket & key
+
+  iex> GenServer.call(Brain.Coordinator, {:put_object, "my_bucket", "my_key.txt", "binary_data"})
+  ...> GenServer.call(Brain.Coordinator, {:get_object, "my_bucket", "my_key.txt"})
+  {:ok, "binary_data"}
+  """
   @impl true
   def handle_call({:get_object, bucket, key}, _from, state) do
-    # TODO: take from DB by (bucket, key)
-    agent = nil
-    # TODO: compose the response (success/failure)
-    result = GenServer.call({:global, agent}, {:get_object, bucket, key})
+    # TODO: taking the agent from db, then other staff
 
-    {:reply, result, state}
+    # case pick_random_agent() do
+    #   {:ok, agent} ->
+    #     GenServer.call(Db.Provider, {:get, Db.Object, {key, bucket}})
+    #     result = GenServer.call({:global, agent}, {:get_object, bucket, key})
+
+    #     {:reply, result, state}
+
+    #   _ ->
+    #     Logger.debug("No agent available")
+    #     {:reply, {:error, @err_agents_unavailable}, state}
+    # end
   end
 
+  @doc """
+  Deletes objects from the storage by bucket & key
+  iex> GenServer.call(Brain.Coordinator, {:put_object, "my_bucket", "my_key.txt", "binary_data"})
+  ...> GenServer.call(Brain.Coordinator, {:delete_object, "my_bucket", "my_key.txt"})
+  :ok
+  """
   @impl true
   def handle_call({:delete_object, bucket, key}, _from, state) do
-    agent = nil
-    # TODO: take from DB by (bucket, key)
-    # TODO: compose the response (success/failure)
-    result = GenServer.call({:global, agent}, {:delete_object, bucket, key})
+    # TODO: taking the agent from db, then other staff
+    # case pick_random_agent() do
+    #   {:ok, agent} ->
+    #     GenServer.call(Db.Provider, {:delete, Db.Object, {key, bucket}})
+    #     result = GenServer.call({:global, agent}, {:delete_object, bucket, key})
+    #     {:reply, result, state}
 
-    {:reply, result, state}
+    #   _ ->
+    #     Logger.debug("No agent available")
+    #     {:reply, {:error, @err_agents_unavailable}, state}
+    # end
+
+    # TODO: compose the response (success/failure)
   end
 
   @impl true
@@ -101,6 +147,20 @@ defmodule Brain.Coordinator do
     {:noreply, state}
   end
 
+  @impl true
+  def handle_info(:check_db_health, state) do
+    case GenServer.call(Db.MnesiaProvider, :health_check) do
+      :ok ->
+        Logger.debug("Database is healthy")
+
+      {:error, reason} ->
+        Logger.emergency("Database health check failed: #{inspect(reason)}")
+    end
+
+    shecule_db_health_check()
+    {:noreply, state}
+  end
+
   defp pick_random_agent do
     agents = alive_storage_agents()
 
@@ -131,5 +191,9 @@ defmodule Brain.Coordinator do
 
   defp schedule_agents_health_check do
     Process.send_after(self(), :check_agents_health, @health_check_interval)
+  end
+
+  defp shecule_db_health_check do
+    Process.send_after(self(), :check_db_health, @health_check_interval)
   end
 end

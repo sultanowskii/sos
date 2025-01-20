@@ -10,7 +10,8 @@ defmodule Brain.Cmd do
         Bandit,
         scheme: :http, plug: Brain.Router, port: 8080
       },
-      {Brain.Coordinator, []}
+      {Brain.Coordinator, []},
+      {Db.Provider, []}
     ]
 
     opts = [strategy: :one_for_one, name: Brain.Supervisor]
