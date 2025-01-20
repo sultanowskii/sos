@@ -13,7 +13,6 @@ defmodule Db.Bucket do
   end
 
   def add(name) do
-    Logger.debug("Adding bucket")
     record = Tuple.insert_at(name, @index_time, DateTime.to_string(DateTime.utc_now()))
     record = Tuple.insert_at(record, 0, @table)
 

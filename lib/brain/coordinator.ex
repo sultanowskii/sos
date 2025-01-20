@@ -29,10 +29,28 @@ defmodule Brain.Coordinator do
     Registry.unregister(BrainRegistry, :coordinator)
   end
 
+  @doc """
+  Storing object in the storage
+
+  Creates a new object in the storage and create record to object database table with bucket_id(name of the bucket).
+  If bucket with such id not exist, creates a new bucket.
+
+
+  # Examples
+    iex> GenServer.call(Brain.Coordinator, {:put_object, "my_bucket", "my_key.txt", "binary_data"})
+    :ok
+
+  ## Parameters
+    * `bucket` - name of the bucket, PK for the bucket entity
+    * `key` - key is the name of the file, which will be stored in the bucket. key+bucket is the PK for the object entity
+    * `data` - binary data of the object, will be stored by the storage agent
+  """
   @impl true
   def handle_call({:put_object, bucket, key, data}, _from, state) do
     case pick_random_agent() do
       {:ok, agent} ->
+        GenServer.call(Db.MnesiaAgent, {:get_or_create, Db.Bucket, {bucket}})
+        GenServer.call(Db.MnesiaAgent, {:add, Db.Object, {key, bucket}})
         # TODO: compose the response (success/failure)
         result = GenServer.call({:global, agent}, {:put_object, bucket, key, data})
 
@@ -43,24 +61,48 @@ defmodule Brain.Coordinator do
     end
   end
 
+  @doc """
+  Get file from the storage by bucket & key
+
+  iex> GenServer.call(Brain.Coordinator, {:put_object, "my_bucket", "my_key.txt", "binary_data"})
+  ...> GenServer.call(Brain.Coordinator, {:get_object, "my_bucket", "my_key.txt"})
+  {:ok, "binary_data"}
+  """
   @impl true
   def handle_call({:get_object, bucket, key}, _from, state) do
-    # TODO: take from DB by (bucket, key)
-    agent = nil
-    # TODO: compose the response (success/failure)
-    result = GenServer.call({:global, agent}, {:get_object, bucket, key})
+    case pick_random_agent() do
+      {:ok, agent} ->
+        GenServer.call(Db.MnesiaAgent, {:get, Db.Object, {key, bucket}})
+        result = GenServer.call({:global, agent}, {:get_object, bucket, key})
 
-    {:reply, result, state}
+        {:reply, result, state}
+
+      _ ->
+        Logger.debug("No agent available")
+        {:reply, {:error, @err_agents_unavailable}, state}
+    end
   end
 
+  @doc """
+  Get file from the storage by bucket & key
+  iex> GenServer.call(Brain.Coordinator, {:put_object, "my_bucket", "my_key.txt", "binary_data"})
+  ...> GenServer.call(Brain.Coordinator, {:delete_object, "my_bucket", "my_key.txt"})
+  :ok
+  """
   @impl true
   def handle_call({:delete_object, bucket, key}, _from, state) do
-    agent = nil
-    # TODO: take from DB by (bucket, key)
-    # TODO: compose the response (success/failure)
-    result = GenServer.call({:global, agent}, {:delete_object, bucket, key})
+    case pick_random_agent() do
+      {:ok, agent} ->
+        GenServer.call(Db.MnesiaAgent, {:delete, Db.Object, {key, bucket}})
+        result = GenServer.call({:global, agent}, {:delete_object, bucket, key})
+        {:reply, result, state}
 
-    {:reply, result, state}
+      _ ->
+        Logger.debug("No agent available")
+        {:reply, {:error, @err_agents_unavailable}, state}
+    end
+
+    # TODO: compose the response (success/failure)
   end
 
   @impl true
