@@ -15,7 +15,12 @@ defmodule Brain.Coordinator do
   @impl true
   def init(state) do
     Registry.register(BrainRegistry, :coordinator, nil)
+
+    {:ok, _} = Db.MnesiaAgent.start_link()
+
     schedule_agents_health_check()
+    shecule_db_health_check()
+
     {:ok, state}
   end
 
@@ -101,6 +106,20 @@ defmodule Brain.Coordinator do
     {:noreply, state}
   end
 
+  @impl true
+  def handle_info(:check_db_health, state) do
+    case GenServer.call(Db.MnesiaAgent, :health_check) do
+      :ok ->
+        Logger.debug("Database is healthy")
+
+      {:error, reason} ->
+        Logger.emergency("Database health check failed: #{inspect(reason)}")
+    end
+
+    shecule_db_health_check()
+    {:noreply, state}
+  end
+
   defp pick_random_agent do
     agents = alive_storage_agents()
 
@@ -131,5 +150,9 @@ defmodule Brain.Coordinator do
 
   defp schedule_agents_health_check do
     Process.send_after(self(), :check_agents_health, @health_check_interval)
+  end
+
+  defp shecule_db_health_check do
+    Process.send_after(self(), :check_db_health, @health_check_interval)
   end
 end
