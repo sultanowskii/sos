@@ -59,6 +59,7 @@ erDiagram
 
     OBJECT {
         string name PK "name"
+        string bucket_name PK "bucket_name"
         string bucket_name FK "bucket identifier"
         time created_at "meta information"
     }
@@ -68,8 +69,6 @@ erDiagram
         time created_at "meta information"
     }
 
-
-    STORAGE ||--o| OBJECT : OneToMany
     OBJECT ||--|{ BUCKET : ManyToOne
 ```
 
