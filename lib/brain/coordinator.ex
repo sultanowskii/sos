@@ -47,10 +47,10 @@ defmodule Brain.Coordinator do
   def handle_call({:put_object, bucket, key, data}, _from, state) do
     case pick_random_agent() do
       {:ok, agent} ->
-        GenServer.call(Db.MnesiaProvider, {:get_or_create, Db.Bucket, {bucket}})
-        GenServer.call(Db.MnesiaProvider, {:add, Db.Object, {key, bucket}})
         # TODO: compose the response (success/failure)
         result = GenServer.call({:global, agent}, {:put_object, bucket, key, data})
+        GenServer.call(Db.MnesiaProvider, {:get_or_create, Db.Bucket, {bucket}})
+        GenServer.call(Db.MnesiaProvider, {:add, Db.Object, {key, bucket}})
 
         {:reply, result, state}
 
@@ -68,17 +68,19 @@ defmodule Brain.Coordinator do
   """
   @impl true
   def handle_call({:get_object, bucket, key}, _from, state) do
-    case pick_random_agent() do
-      {:ok, agent} ->
-        GenServer.call(Db.Provider, {:get, Db.Object, {key, bucket}})
-        result = GenServer.call({:global, agent}, {:get_object, bucket, key})
+    # TODO: taking the agent from db, then other staff
 
-        {:reply, result, state}
+    # case pick_random_agent() do
+    #   {:ok, agent} ->
+    #     GenServer.call(Db.Provider, {:get, Db.Object, {key, bucket}})
+    #     result = GenServer.call({:global, agent}, {:get_object, bucket, key})
 
-      _ ->
-        Logger.debug("No agent available")
-        {:reply, {:error, @err_agents_unavailable}, state}
-    end
+    #     {:reply, result, state}
+
+    #   _ ->
+    #     Logger.debug("No agent available")
+    #     {:reply, {:error, @err_agents_unavailable}, state}
+    # end
   end
 
   @doc """
@@ -89,16 +91,17 @@ defmodule Brain.Coordinator do
   """
   @impl true
   def handle_call({:delete_object, bucket, key}, _from, state) do
-    case pick_random_agent() do
-      {:ok, agent} ->
-        GenServer.call(Db.Provider, {:delete, Db.Object, {key, bucket}})
-        result = GenServer.call({:global, agent}, {:delete_object, bucket, key})
-        {:reply, result, state}
+    # TODO: taking the agent from db, then other staff
+    # case pick_random_agent() do
+    #   {:ok, agent} ->
+    #     GenServer.call(Db.Provider, {:delete, Db.Object, {key, bucket}})
+    #     result = GenServer.call({:global, agent}, {:delete_object, bucket, key})
+    #     {:reply, result, state}
 
-      _ ->
-        Logger.debug("No agent available")
-        {:reply, {:error, @err_agents_unavailable}, state}
-    end
+    #   _ ->
+    #     Logger.debug("No agent available")
+    #     {:reply, {:error, @err_agents_unavailable}, state}
+    # end
 
     # TODO: compose the response (success/failure)
   end
