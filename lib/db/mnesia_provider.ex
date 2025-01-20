@@ -1,4 +1,4 @@
-defmodule Db.MnesiaAgent do
+defmodule Db.MnesiaProvider do
   @moduledoc """
   Mnesia agent for processing operations with database
   """
@@ -44,24 +44,24 @@ defmodule Db.MnesiaAgent do
   sample of use
   examples:
     #adding to bucket table where bucket_name is "bucket_name"
-    iex> {:ok, pid} = Db.MnesiaAgent.start_link
+    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
     :ok
 
     #adding to object table, where bucket_id is 2 and object_name is "object_name"
-    iex> {:ok, pid} = Db.MnesiaAgent.start_link
+    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Object, {"object_nameAAAA", "bucket_name"}})
     :ok
 
     #adding to storage table where storage_name is "storage_name"
-    iex> {:ok, pid} = Db.MnesiaAgent.start_link
+    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Storage, {"storage_name", true}})
     :ok
 
 
     #example of error(same for each record)
     #adding to storage table data, but without available status
-    iex> {:ok, pid} = Db.MnesiaAgent.start_link
+    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Storage, {"storage_name"}})
     {:error, {:transaction_aborted, {:bad_type, {:storage, "storage_name"}}}}
   """
@@ -74,7 +74,7 @@ defmodule Db.MnesiaAgent do
 
   sample of use todo(need to ignore time difference while running the test)
   but the sample of use & output:
-  i{:ok, pid} = Db.MnesiaAgent.start_link
+  i{:ok, pid} = Db.MnesiaProvider.start_link([])
   .> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
   .> GenServer.call(pid, {:get, Db.Bucket, {"bucket_name"}})
   {:ok, {:bucket, "bucket_name", timestamp}}
@@ -89,19 +89,19 @@ defmodule Db.MnesiaAgent do
   sample of use
   examples:
     #adding to bucket table where bucket_name is "bucket_name"
-    iex> {:ok, pid} = Db.MnesiaAgent.start_link
+    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
     ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
     :ok
 
     #adding to object table, where bucket_id is 2 and object_name is "object_name"
-    iex> {:ok, pid} = Db.MnesiaAgent.start_link
+    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Object, {"object_name", "bucket_name"}})
     ...> GenServer.call(pid, {:delete, Db.Object, {"object_name", "bucket_name"}})
     :ok
 
     #adding to storage table where storage_name is "storage_name"
-    iex> {:ok, pid} = Db.MnesiaAgent.start_link
+    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Storage, {"storage_name", true}})
     ...> GenServer.call(pid, {:delete, Db.Storage, {"storage_name"}})
     :ok
@@ -109,7 +109,7 @@ defmodule Db.MnesiaAgent do
 
     #example of error(same for each record)
     #adding to storage table data, which is not exist
-    {:ok, pid} = Db.MnesiaAgent.start_link
+    {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:delete, Db.Storage, {"da"}})
     :fail
   """

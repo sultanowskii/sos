@@ -16,8 +16,6 @@ defmodule Brain.Coordinator do
   def init(state) do
     Registry.register(BrainRegistry, :coordinator, nil)
 
-    {:ok, _} = Db.MnesiaAgent.start_link()
-
     schedule_agents_health_check()
     shecule_db_health_check()
 
@@ -49,8 +47,8 @@ defmodule Brain.Coordinator do
   def handle_call({:put_object, bucket, key, data}, _from, state) do
     case pick_random_agent() do
       {:ok, agent} ->
-        GenServer.call(Db.MnesiaAgent, {:get_or_create, Db.Bucket, {bucket}})
-        GenServer.call(Db.MnesiaAgent, {:add, Db.Object, {key, bucket}})
+        GenServer.call(Db.MnesiaProvider, {:get_or_create, Db.Bucket, {bucket}})
+        GenServer.call(Db.MnesiaProvider, {:add, Db.Object, {key, bucket}})
         # TODO: compose the response (success/failure)
         result = GenServer.call({:global, agent}, {:put_object, bucket, key, data})
 
@@ -72,7 +70,7 @@ defmodule Brain.Coordinator do
   def handle_call({:get_object, bucket, key}, _from, state) do
     case pick_random_agent() do
       {:ok, agent} ->
-        GenServer.call(Db.MnesiaAgent, {:get, Db.Object, {key, bucket}})
+        GenServer.call(Db.Provider, {:get, Db.Object, {key, bucket}})
         result = GenServer.call({:global, agent}, {:get_object, bucket, key})
 
         {:reply, result, state}
@@ -93,7 +91,7 @@ defmodule Brain.Coordinator do
   def handle_call({:delete_object, bucket, key}, _from, state) do
     case pick_random_agent() do
       {:ok, agent} ->
-        GenServer.call(Db.MnesiaAgent, {:delete, Db.Object, {key, bucket}})
+        GenServer.call(Db.Provider, {:delete, Db.Object, {key, bucket}})
         result = GenServer.call({:global, agent}, {:delete_object, bucket, key})
         {:reply, result, state}
 
@@ -150,7 +148,7 @@ defmodule Brain.Coordinator do
 
   @impl true
   def handle_info(:check_db_health, state) do
-    case GenServer.call(Db.MnesiaAgent, :health_check) do
+    case GenServer.call(Db.MnesiaProvider, :health_check) do
       :ok ->
         Logger.debug("Database is healthy")
 
