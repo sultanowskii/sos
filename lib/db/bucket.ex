@@ -1,0 +1,37 @@
+defmodule Db.Bucket do
+  @moduledoc """
+   Module for processing operations with bucket enitity
+  """
+  alias Db.MnesiaHelper
+
+  @table :bucket
+  @index_time 1
+
+  def init do
+    MnesiaHelper.init(@table, [:name, :created_at])
+  end
+
+  def add(name) do
+    record = Tuple.insert_at(name, @index_time, DateTime.to_string(DateTime.utc_now()))
+    record = Tuple.insert_at(record, 0, @table)
+
+    MnesiaHelper.add(record)
+  end
+
+  def get(name) do
+    record = Tuple.insert_at(name, 0, @table)
+    MnesiaHelper.get(record)
+  end
+
+  def delete(name) do
+    record = Tuple.insert_at(name, 0, @table)
+    MnesiaHelper.delete(record)
+  end
+
+  def get_or_create(name) do
+    case get(name) do
+      {:ok, record} -> record
+      {:error, :not_found} -> add(name)
+    end
+  end
+end
