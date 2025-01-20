@@ -3,15 +3,15 @@ defmodule Db.Cmd do
    Module for initializing and configuring mnesia
   """
 
+  require Logger
   alias :mnesia, as: Mnesia
 
   @db_store "#{System.user_home()}/.mnesia"
 
   def init do
-    set_disk_location()
-
     Mnesia.create_schema([node()])
     Mnesia.start()
+    set_disk_location()
 
     init_tables()
   end
@@ -28,5 +28,6 @@ defmodule Db.Cmd do
     File.mkdir_p!(disk_dir)
 
     Mnesia.change_config(:dir, disk_dir)
+    Logger.debug("Mnesia directory set to #{disk_dir}")
   end
 end
