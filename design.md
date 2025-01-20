@@ -53,21 +53,19 @@ Database diagrams
 ```mermaid
 erDiagram
     STORAGE {
-        integer id PK "identifier"
-        string name "name"
-        string availability "availability"
+        string name PK "name"
+        boolean availability "availability"
     }
 
     OBJECT {
-        integer id PK "identifier"
-        string name "name"
-        integer bucket_id FK "bucket identifier"
-        string meta_info "meta information"
+        string name PK "name"
+        string bucket_name FK "bucket identifier"
+        time created_at "meta information"
     }
 
     BUCKET {
-        integer id PK "identifier"
-        string name "name"
+        string name PK "name"
+        time created_at "meta information"
     }
 
 
