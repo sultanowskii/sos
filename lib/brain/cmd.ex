@@ -11,7 +11,7 @@ defmodule Brain.Cmd do
         scheme: :http, plug: Brain.Router, port: 8080
       },
       {Brain.Coordinator, []},
-      {Db.Provider, []}
+      {Db.MnesiaProvider, []}
     ]
 
     opts = [strategy: :one_for_one, name: Brain.Supervisor]
