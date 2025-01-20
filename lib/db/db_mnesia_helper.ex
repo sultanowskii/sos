@@ -1,6 +1,6 @@
 defmodule Db.MnesiaHelper do
   @moduledoc """
-   Module for processing operations with mnesia
+    Database operations processing
   """
 
   alias :mnesia, as: Mnesia

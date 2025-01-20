@@ -16,7 +16,7 @@ defmodule Db.MnesiaProvider do
   end
 
   @doc """
-  Perform a health check on the database.
+  Performs a health check on the database..
   """
   def handle_call(:health_check, _from, state) do
     case health_check() do
@@ -39,21 +39,21 @@ defmodule Db.MnesiaProvider do
   end
 
   @doc """
-  Add record to Mnisia table
+  Adds records to Mnisia table
 
-  sample of use
+
   examples:
     #adding to bucket table where bucket_name is "bucket_name"
     iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
     :ok
 
-    #adding to object table, where bucket_id is 2 and object_name is "object_name"
+    #add an object (object_name="object_nameAAAA", bucket_name="bucket_name") record
     iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Object, {"object_nameAAAA", "bucket_name"}})
     :ok
 
-    #adding to storage table where storage_name is "storage_name"
+    #add a storage (storage_name="storage_name", availabliity=true) record
     iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Storage, {"storage_name", true}})
     :ok
@@ -70,9 +70,9 @@ defmodule Db.MnesiaProvider do
   end
 
   @doc """
-  Get record to Mnisia table
+  Gets records to Mnisia table
 
-  sample of use todo(need to ignore time difference while running the test)
+  sample of use TODO(need to ignore time difference while running the test)
   but the sample of use & output:
   i{:ok, pid} = Db.MnesiaProvider.start_link([])
   .> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
@@ -84,11 +84,11 @@ defmodule Db.MnesiaProvider do
   end
 
   @doc """
-  Delete record to Mnisia table
+  Deletes record from Mnesia table
 
-  sample of use
+
   examples:
-    #adding to bucket table where bucket_name is "bucket_name"
+    #add a bucket (name="bucket_name") record
     iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
     ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
@@ -107,8 +107,8 @@ defmodule Db.MnesiaProvider do
     :ok
 
 
-    #example of error(same for each record)
-    #adding to storage table data, which is not exist
+    # example of error (same for each record)
+    # add an invalid storage record (without `availability` field)
     {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:delete, Db.Storage, {"da"}})
     :fail

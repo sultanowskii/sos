@@ -1,6 +1,6 @@
 defmodule Db.Storage do
   @moduledoc """
-    Module for processing operations with storage enitity
+    Storage entity
   """
 
   alias Db.MnesiaHelper

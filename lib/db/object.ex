@@ -1,6 +1,6 @@
 defmodule Db.Object do
   @moduledoc """
-   Module for processing operations with Object enitity
+    Object entity
   """
 
   alias Db.MnesiaHelper

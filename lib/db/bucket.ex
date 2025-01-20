@@ -1,6 +1,6 @@
 defmodule Db.Bucket do
   @moduledoc """
-   Module for processing operations with bucket enitity
+    Bucket entity
   """
   require Logger
   alias Db.MnesiaHelper

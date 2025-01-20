@@ -1,6 +1,6 @@
 defmodule Db.Cmd do
   @moduledoc """
-   Module for initializing and configuring mnesia
+    Mnesia entrypoint
   """
 
   require Logger
@@ -28,6 +28,6 @@ defmodule Db.Cmd do
     File.mkdir_p!(disk_dir)
 
     Mnesia.change_config(:dir, disk_dir)
-    Logger.debug("Mnesia directory set to #{disk_dir}")
+    Logger.info("Mnesia directory set to #{disk_dir}")
   end
 end

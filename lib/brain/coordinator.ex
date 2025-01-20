@@ -28,10 +28,8 @@ defmodule Brain.Coordinator do
   end
 
   @doc """
-  Storing object in the storage
-
-  Creates a new object in the storage and create record to object database table with bucket_id(name of the bucket).
-  If bucket with such id not exist, creates a new bucket.
+  Creates a new object in the storage and writes a record to database.
+  If a bucket with specified name doesn't exist, creates a new bucket.
 
 
   # Examples
@@ -39,9 +37,9 @@ defmodule Brain.Coordinator do
     :ok
 
   ## Parameters
-    * `bucket` - name of the bucket, PK for the bucket entity
-    * `key` - key is the name of the file, which will be stored in the bucket. key+bucket is the PK for the object entity
-    * `data` - binary data of the object, will be stored by the storage agent
+    * `bucket` - name of the bucket
+    * `key` - object key
+    * `data` - binary data of the object
   """
   @impl true
   def handle_call({:put_object, bucket, key, data}, _from, state) do
@@ -60,7 +58,7 @@ defmodule Brain.Coordinator do
   end
 
   @doc """
-  Get file from the storage by bucket & key
+  Gets an object from the storage by bucket & key
 
   iex> GenServer.call(Brain.Coordinator, {:put_object, "my_bucket", "my_key.txt", "binary_data"})
   ...> GenServer.call(Brain.Coordinator, {:get_object, "my_bucket", "my_key.txt"})
@@ -84,7 +82,7 @@ defmodule Brain.Coordinator do
   end
 
   @doc """
-  Get file from the storage by bucket & key
+  Deletes objects from the storage by bucket & key
   iex> GenServer.call(Brain.Coordinator, {:put_object, "my_bucket", "my_key.txt", "binary_data"})
   ...> GenServer.call(Brain.Coordinator, {:delete_object, "my_bucket", "my_key.txt"})
   :ok
