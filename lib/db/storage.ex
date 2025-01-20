@@ -1,4 +1,8 @@
 defmodule Db.Storage do
+  @moduledoc """
+    Module for processing operations with storage enitity
+  """
+
   alias Db.MnesiaHelper
 
   @table :storage
