@@ -1,8 +1,7 @@
 defmodule Db.MnesiaProvider do
   @moduledoc """
-  Mnesia agent for processing operations with database
+  Mnesia operations
   """
-  alias :mnesia, as: Mnesia
   use GenServer
   require Logger
 
@@ -15,27 +14,8 @@ defmodule Db.MnesiaProvider do
     {:ok, status}
   end
 
-  @doc """
-  Performs a health check on the database..
-  """
-  def handle_call(:health_check, _from, state) do
-    case health_check() do
-      :ok ->
-        {:reply, :ok, state}
-
-      {:error, reason} ->
-        {:reply, {:error, reason}, state}
-    end
-  end
-
-  defp health_check do
-    case Mnesia.system_info(:is_running) do
-      :yes ->
-        :ok
-
-      _ ->
-        {:error, "mnesia not running"}
-    end
+  def terminate(_reason, _state) do
+    Db.Cmd.terminate()
   end
 
   @doc """

@@ -7,7 +7,7 @@ defmodule Db.MnesiaHelper do
   require Logger
 
   def init(table, attributes) do
-    Mnesia.create_table(table, attributes: attributes)
+    Mnesia.create_table(table, [{:attributes, attributes}, {:disc_copies, [node()]}])
   end
 
   def add(record) do

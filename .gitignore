@@ -12,3 +12,7 @@ erl_crash.dump
 .venv/
 
 .vscode/
+
+.sos-data/
+sos-data/
+Mnesia.*/
