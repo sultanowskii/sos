@@ -32,4 +32,8 @@ defmodule Db.Object do
   def get_or_create(_) do
     {:error, :not_supported}
   end
+
+  def get_all do
+    MnesiaHelper.get_matching_record({@table, :_, :_, :_})
+  end
 end

@@ -42,4 +42,8 @@ defmodule Db.Bucket do
         add(name)
     end
   end
+
+  def get_all do
+    MnesiaHelper.get_matching_record({@table, :_, :_})
+  end
 end

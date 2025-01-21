@@ -121,6 +121,16 @@ defmodule Db.MnesiaProvider do
     handle_db_operation(:get_or_create, module, id, state)
   end
 
+  def handle_call({:get_all, module}, _, state) do
+    case module.get_all() do
+      {:ok, records} ->
+        {:reply, {:ok, records}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
   defp handle_db_operation(:add, module, record, state) do
     case module.add(record) do
       :ok ->

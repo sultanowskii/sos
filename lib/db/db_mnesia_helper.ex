@@ -45,6 +45,25 @@ defmodule Db.MnesiaHelper do
     end
   end
 
+  @doc """
+  Searches for the records in the database according to specified data
+
+  ## Parameters
+    * `record` - the record, e.g. `{:object, "object_name", "bucket_name", :_}`, where :_ meaninig any value
+  """
+  def get_matching_record(record) do
+    case Mnesia.transaction(fn -> :mnesia.match_object(record) end) do
+      {:atomic, records} when is_list(records) ->
+        {:ok, records}
+
+      {:aborted, reason} ->
+        {:error, {:transaction_aborted, reason}}
+
+      _ ->
+        {:error, :unknown_error}
+    end
+  end
+
   def get_or_create(record) do
     case get(record) do
       {:ok, existing_record} ->
