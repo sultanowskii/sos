@@ -49,4 +49,23 @@ defmodule Db.Bucket do
   def get_all(name) do
     MnesiaHelper.get_matching_record({@table, name, :_})
   end
+
+  def get_by_prefix(prefix) do
+    case get_all() do
+      {:ok, records} ->
+        data =
+          Enum.filter(records, fn
+            {@table, name, _} ->
+              String.starts_with?(name, prefix)
+
+            _ ->
+              []
+          end)
+
+        {:ok, data}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 end

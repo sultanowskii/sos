@@ -106,11 +106,25 @@ defmodule Db.MnesiaProvider do
     handle_db_operation(:get_objects_by_bucket, Db.Object, name, state)
   end
 
+  def handle_call({:get_by_prefix, module, prefix}, _, state) do
+    handle_db_operation(:get_by_prefix, module, prefix, state)
+  end
+
   def handle_call({:get_storage, name, bucket_name}, _, state) do
     case Db.Object.get({name, bucket_name}) do
       {:ok, record} ->
         {:object, _, _, provider, _} = record
         {:reply, {:ok, provider}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  defp handle_db_operation(:get_by_prefix, module, prefix, state) do
+    case module.get_by_prefix(prefix) do
+      {:ok, records} ->
+        {:reply, {:ok, records}, state}
 
       {:error, reason} ->
         {:reply, {:error, reason}, state}
