@@ -6,9 +6,14 @@ _build/
 .venv/
 
 .vscode/
+.github/
 
 .sos-data/
 sos-data/
 Mnesia.*/
 
 .env
+
+LICENSE
+README.md
+design.md
