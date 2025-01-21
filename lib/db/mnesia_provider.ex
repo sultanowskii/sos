@@ -94,11 +94,6 @@ defmodule Db.MnesiaProvider do
     ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
     :ok
 
-    #adding to object table, where bucket_id is 2 and object_name is "object_name"
-    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
-    ...> GenServer.call(pid, {:add, Db.Object, {"object_name", "bucket_name","storage_name"}})
-    ...> GenServer.call(pid, {:delete, Db.Object, {"object_name", "bucket_name"}})
-    :ok
 
     #adding to storage table where storage_name is "storage_name"
     iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
@@ -146,8 +141,6 @@ defmodule Db.MnesiaProvider do
       {:error, reason} ->
         {:reply, {:error, reason}, state}
     end
-
-    {:reply, {:ok, "storage"}, state}
   end
 
   defp handle_db_operation(:get_objects_by_bucket, module, prefix, state) do

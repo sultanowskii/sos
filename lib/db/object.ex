@@ -36,10 +36,12 @@ defmodule Db.Object do
   end
 
   def get_all do
-    MnesiaHelper.get_matching_record({@table, :_, :_, :_})
+    MnesiaHelper.get_matching_record({@table, :_, :_, :_, :_})
   end
 
   def get_all_by_bucket_name(bucket_name) do
-    MnesiaHelper.get_matching_record({@table, :_, bucket_name, :_})
+    result = MnesiaHelper.get_matching_record({@table, :_, bucket_name, :_, :_})
+    Logger.debug("Got all objects for bucket #{bucket_name}: #{inspect(result)}")
+    result
   end
 end
