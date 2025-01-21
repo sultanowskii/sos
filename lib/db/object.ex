@@ -8,15 +8,14 @@ defmodule Db.Object do
   @table :object
 
   def init do
-    MnesiaHelper.init(@table, [:name, :bucket_name, :storage, :created_at])
+    MnesiaHelper.init(@table, [:name, :bucket_name, :storage, :size, :created_at])
   end
 
   def add(record) do
-    {name, bucket_name, storage} = record
-    Logger.debug("adding object #{name} to bucket #{bucket_name} with storage #{storage}")
+    {name, bucket_name, storage, size} = record
 
     MnesiaHelper.add(
-      {@table, "#{bucket_name}/#{name}", bucket_name, storage,
+      {@table, "#{bucket_name}/#{name}", bucket_name, storage, size,
        DateTime.to_string(DateTime.utc_now())}
     )
   end
@@ -36,11 +35,11 @@ defmodule Db.Object do
   end
 
   def get_all do
-    MnesiaHelper.get_matching_record({@table, :_, :_, :_, :_})
+    MnesiaHelper.get_matching_record({@table, :_, :_, :_, :_, :_})
   end
 
   def get_all_by_bucket_name(bucket_name) do
-    result = MnesiaHelper.get_matching_record({@table, :_, bucket_name, :_, :_})
+    result = MnesiaHelper.get_matching_record({@table, :_, bucket_name, :_, :_, :_})
     result
   end
 

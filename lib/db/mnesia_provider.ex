@@ -106,7 +106,7 @@ defmodule Db.MnesiaProvider do
   def handle_call({:get_storage, name, bucket_name}, _, state) do
     case Db.Object.get({name, bucket_name}) do
       {:ok, record} ->
-        {:object, _, _, provider, _} = record
+        {:object, _, _, provider, _, _} = record
         {:reply, {:ok, provider}, state}
 
       {:error, reason} ->

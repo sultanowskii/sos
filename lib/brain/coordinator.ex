@@ -45,11 +45,11 @@ defmodule Brain.Coordinator do
     case pick_random_agent() do
       {:ok, agent} ->
         case GenServer.call({:global, agent}, {:put_object, bucket, key, data}) do
-          :ok ->
+          {:ok, size} ->
             {:storage_agent, agent_name} = agent
 
             GenServer.call(Db.MnesiaProvider, {:get_or_create, Db.Bucket, {bucket}})
-            GenServer.call(Db.MnesiaProvider, {:add, Db.Object, {key, bucket, agent_name}})
+            GenServer.call(Db.MnesiaProvider, {:add, Db.Object, {key, bucket, agent_name, size}})
 
             {:reply, :ok, state}
 
