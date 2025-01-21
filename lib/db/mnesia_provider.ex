@@ -50,7 +50,7 @@ defmodule Db.MnesiaProvider do
 
     #add an object (object_name="object_nameAAAA", bucket_name="bucket_name") record
     iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
-    ...> GenServer.call(pid, {:add, Db.Object, {"object_nameAAAA", "bucket_name"}})
+    ...> GenServer.call(pid, {:add, Db.Object, {"object_nameAAAA", "bucket_name","storage_name"}})
     :ok
 
     #add a storage (storage_name="storage_name", availabliity=true) record
@@ -94,11 +94,6 @@ defmodule Db.MnesiaProvider do
     ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
     :ok
 
-    #adding to object table, where bucket_id is 2 and object_name is "object_name"
-    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
-    ...> GenServer.call(pid, {:add, Db.Object, {"object_name", "bucket_name"}})
-    ...> GenServer.call(pid, {:delete, Db.Object, {"object_name", "bucket_name"}})
-    :ok
 
     #adding to storage table where storage_name is "storage_name"
     iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
@@ -119,6 +114,63 @@ defmodule Db.MnesiaProvider do
 
   def handle_call({:get_or_create, module, id}, _from, state) do
     handle_db_operation(:get_or_create, module, id, state)
+  end
+
+  def handle_call({:get_all, module}, _, state) do
+    handle_db_operation(:get_all, module, state)
+  end
+
+  def handle_call({:get_all, module, name}, _, state) do
+    handle_db_operation(:get_all, module, name, state)
+  end
+
+  def handle_call({:get_objects, name}, _, state) do
+    handle_db_operation(:get_objects, Db.Object, name, state)
+  end
+
+  def handle_call({:get_objects_by_bucket, name}, _, state) do
+    handle_db_operation(:get_objects_by_bucket, Db.Object, name, state)
+  end
+
+  def handle_call({:get_storage, name, bucket_name}, _, state) do
+    case Db.Object.get({name, bucket_name}) do
+      {:ok, record} ->
+        {:object, _, _, provider, _} = record
+        {:reply, {:ok, provider}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  defp handle_db_operation(:get_objects_by_bucket, module, prefix, state) do
+    case module.get_all_by_bucket_name(prefix) do
+      {:ok, records} ->
+        {:reply, {:ok, records}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  defp handle_db_operation(:get_all, module, state) do
+    case module.get_all() do
+      {:ok, records} ->
+        {:reply, {:ok, records}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  defp handle_db_operation(:get_all, module, prefix, state) do
+    case module.get_all(prefix) do
+      {:ok, records} ->
+        {:reply, {:ok, records}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
   end
 
   defp handle_db_operation(:add, module, record, state) do

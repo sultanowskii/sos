@@ -2,6 +2,7 @@ defmodule Brain.ApiRouter do
   @moduledoc """
   API Endpoints router.
   """
+  alias Brain.ApiSerice
   alias Brain.Mapper
   alias Brain.Service
 
@@ -19,15 +20,11 @@ defmodule Brain.ApiRouter do
   end
 
   # ListBuckets
-  # Supported params:
-  # - prefix
   get "/" do
     conn = fetch_query_params(conn)
-    params = conn.query_params
-    prefix = params["prefix"]
 
     resp =
-      Service.list_buckets(prefix)
+      ApiSerice.list_buckets()
       |> Mapper.map_resp_list_buckets()
       |> XmlBuilder.generate()
 
@@ -37,15 +34,14 @@ defmodule Brain.ApiRouter do
   # ListObjectsV2
   # Supported params:
   # - list-type
-  # - prefix
+
   get "/:bucket" do
     conn = fetch_query_params(conn)
     params = conn.query_params
     _list_type = params["list-type"]
-    prefix = params["prefix"]
 
     resp =
-      Service.list_objects(prefix)
+      ApiSerice.list_objects()
       |> Mapper.map_resp_list_objects()
       |> XmlBuilder.generate()
 
@@ -54,14 +50,14 @@ defmodule Brain.ApiRouter do
 
   # CreateBucket
   put "/:bucket" do
-    Service.create_bucket(bucket)
+    ApiSerice.create_bucket(bucket)
     conn |> put_resp_header("location", "/#{bucket}")
     send_resp(conn, 200, "")
   end
 
   # DeleteBucket
   delete "/:bucket" do
-    Service.delete_bucket(bucket)
+    ApiSerice.delete_bucket(bucket)
     send_resp(conn, 204, "")
   end
 
@@ -78,7 +74,7 @@ defmodule Brain.ApiRouter do
         # PutObject
         case Plug.Conn.read_body(conn) do
           {:ok, request_data, conn} ->
-            result = Service.put_object(bucket, key, request_data)
+            result = ApiSerice.put_object(bucket, key, request_data)
 
             case result do
               :ok ->
@@ -101,7 +97,7 @@ defmodule Brain.ApiRouter do
             send_resp(conn, 400, message)
 
           {source_bucket, source_key} ->
-            result = Service.copy_object(source_bucket, source_key, bucket, key)
+            result = ApiSerice.copy_object(source_bucket, source_key, bucket, key)
 
             case result do
               {:ok, raw} ->
@@ -122,7 +118,7 @@ defmodule Brain.ApiRouter do
   # GetObject
   get "/:bucket/*key_parts" do
     key = key_from_tokens(key_parts)
-    result = Service.get_object(bucket, key)
+    result = ApiSerice.get_object(bucket, key)
 
     case result do
       {:ok, data} ->
@@ -136,7 +132,7 @@ defmodule Brain.ApiRouter do
   # DeleteObject
   delete "/:bucket/*key_parts" do
     key = key_from_tokens(key_parts)
-    result = Service.delete_object(bucket, key)
+    result = ApiSerice.delete_object(bucket, key)
 
     case result do
       :ok ->

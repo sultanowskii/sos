@@ -2,60 +2,112 @@ defmodule Brain.ApiSerice do
   @moduledoc """
   Brain service logic.
   """
+  require Logger
 
   @err_coordinator_unavailable :coordinator_unavailable
 
-  def list_buckets(prefix) do
-    # TODO: DB
-    data = %{
-      prefix: prefix,
-      buckets: [
+  def list_buckets do
+    case GenServer.call(Db.MnesiaProvider, {:get_all, Db.Bucket}) do
+      {:ok, records} ->
+        data =
+          Enum.map(records, fn record ->
+            {:bucket, name, created_at} = record
+
+            %{
+              creation_date: created_at,
+              name: name
+            }
+          end)
+
+        data
+
+      {:error, reason} ->
+        Logger.warning("Failed to get buckets: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  def list_buckets(name) do
+    case GenServer.call(Db.MnesiaProvider, {:get_all, Db.Bucket, name}) do
+      {:ok, records} ->
+        data =
+          Enum.map(records, fn record ->
+            {:bucket, name, created_at} = record
+
+            %{
+              creation_date: created_at,
+              name: name
+            }
+          end)
+
+        data
+
+      {:error, reason} ->
+        Logger.error("Failed to get buckets: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  def list_objects(bucket_name) do
+    case GenServer.call(Db.MnesiaProvider, {:get_objects_by_bucket, bucket_name}) do
+      {:ok, records} ->
+        contents =
+          Enum.map(records, fn record ->
+            {:object, name, bucket_name_id, storage, created_at} = record
+
+            %{
+              name: name,
+              key: "#{bucket_name_id}/#{name}",
+              creation_date: created_at,
+              storage: storage
+            }
+          end)
+
         %{
-          creation_date: "some_date",
-          name: "some name #1"
-        },
-        %{
-          creation_date: "some_other_date",
-          name: "some name #2"
+          name: bucket_name,
+          key_count: Enum.count(contents),
+          contents: contents
         }
-      ]
-    }
 
-    data
+      {:error, reason} ->
+        Logger.warning("Failed to get buckets: #{inspect(reason)}")
+        {:error, reason}
+    end
   end
 
-  def list_objects(prefix) do
-    # TODO: DB
-    data = %{
-      name: "some_bucket",
-      prefix: prefix,
-      key_count: 1123,
-      is_truncated: false,
-      contents: [
+  def list_objects do
+    case GenServer.call(Db.MnesiaProvider, {:get_all, Db.Object}) do
+      {:ok, records} ->
+        contents =
+          Enum.map(records, fn record ->
+            {:object, name, bucket_name_id, storage, created_at} = record
+
+            %{
+              name: name,
+              bucket_name: bucket_name_id,
+              key: "#{bucket_name_id}/#{name}",
+              creation_date: created_at,
+              storage: storage
+            }
+          end)
+
         %{
-          key: "some/cool/key.txt",
-          last_modified: "timestamp",
-          size: 1337,
-          storage_class: "STANDARD"
-        },
-        %{
-          key: "some/other-cool/key.txt",
-          last_modified: "other timestamp",
-          size: 288,
-          storage_class: "STANDARD"
+          key_count: Enum.count(contents),
+          contents: contents
         }
-      ]
-    }
 
-    data
+      {:error, reason} ->
+        Logger.warning("Failed to get buckets: #{inspect(reason)}")
+        {:error, reason}
+    end
   end
 
-  def create_bucket(_bucket) do
-    # TODO: DB
+  def create_bucket(bucket) do
+    GenServer.call(Db.MnesiaProvider, {:add, Db.Bucket, bucket})
   end
 
-  def delete_bucket(_bucket) do
-    # TODO: DB
+  def delete_bucket(bucket) do
+    GenServer.call(Db.MnesiaProvider, {:delete, Db.Bucket, bucket})
   end
 
   def put_object(bucket, key, data) do
