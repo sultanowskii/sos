@@ -8,7 +8,6 @@
 - `ListBuckets`
 - `DeleteBucket`
 - `PutObject`
-- `CopyObject`
 - `ListObjectsV2`
 - `GetObject`
 - `DeleteObject`

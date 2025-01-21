@@ -1,0 +1,61 @@
+version: '3.9'
+services:
+  brain:
+    build:
+      context: .
+      dockerfile: deploy-example/brain.Dockerfile
+    container_name: sos-brain
+    hostname: brain.sos.local
+    environment:
+      NAME: brain@brain.sos.local
+      COOKIE: ${COOKIE}
+    ports:
+      - 8080:8080
+    networks:
+      - sos-network
+  agent-green:
+    build:
+      context: .
+      dockerfile: deploy-example/agent.Dockerfile
+    container_name: agent-green
+    hostname: agent-green.sos.local
+    environment:
+      NAME: agent@agent-green.sos.local
+      COOKIE: ${COOKIE}
+      BRAIN_NAME: brain@brain.sos.local
+      CLIENT_ID: agent-green
+      DIRECTORY: sos-data
+    networks:
+      - sos-network
+  agent-blue:
+    build:
+      context: .
+      dockerfile: deploy-example/agent.Dockerfile
+    container_name: agent-blue
+    hostname: agent-blue.sos.local
+    environment:
+      NAME: agent@agent-blue.sos.local
+      COOKIE: ${COOKIE}
+      BRAIN_NAME: brain@brain.sos.local
+      CLIENT_ID: agent-blue
+      DIRECTORY: sos-data
+    networks:
+      - sos-network
+  agent-red:
+    build:
+      context: .
+      dockerfile: deploy-example/agent.Dockerfile
+    container_name: agent-red
+    hostname: agent-red.sos.local
+    environment:
+      NAME: agent@agent-red.sos.local
+      COOKIE: ${COOKIE}
+      BRAIN_NAME: brain@brain.sos.local
+      CLIENT_ID: agent-red
+      DIRECTORY: sos-data
+    networks:
+      - sos-network
+
+networks:
+  sos-network:
+    driver: bridge
