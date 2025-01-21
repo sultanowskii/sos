@@ -66,7 +66,51 @@ region = idk
 endpoint_url = http://localhost:8080/api
 ```
 
-## Multi-node basic setup
+### CheatSheet
+
+#### Create bucket
+
+```bash
+aws --profile local s3api create-bucket --bucket some-bucket
+```
+
+#### List buckets
+
+```bash
+aws --profile local s3api list-buckets
+```
+
+#### Delete bucket
+
+```bash
+aws --profile local s3api delete-bucket --bucket some-bucket
+```
+
+#### Put object
+
+```bash
+aws --profile local s3api put-object --bucket some-bucket --key some/cool/key --body some-file
+```
+
+#### List objects
+
+```bash
+aws --profile local s3api list-objects-v2 --bucket some-bucket
+```
+
+#### Get object
+
+```bash
+aws --profile local s3api get-object --bucket some-bucket --key some/cool/key output-file.txt
+```
+
+#### Delete object
+
+```bash
+aws --profile local s3api delete-object --bucket some-bucket --key some/cool/key
+```
+
+## Multi-node setup
 
 ### Local
 
@@ -88,7 +132,7 @@ elixir \
     -S mix run -- storage-agent --brain-name server@127.0.0.1 --client-id sherlock-holmes --directory sos-data
 ```
 
-### Docker
+### Docker (manual approach)
 
 #### Build an image
 
@@ -105,7 +149,7 @@ docker buildx build \
 docker network create sos-playground-network
 ```
 
-#### Run containers
+#### Start containers
 
 **IMPORTANT**: Node connection only works with 'valid' hostnames. Therefore, if you want to choose some other hostname (`--name`), make sure it contains a dot (`.`).
 
@@ -148,3 +192,13 @@ elixir \
     --cookie cookie-example \
     -S mix run -- storage-agent --brain-name server@sos.server --client-id sherlock-holmes --directory sos-data
 ```
+
+### Docker (docker-compose)
+
+Example of the deployment could be found in [deploy-example/](deploy-example/). Simply run:
+
+```bash
+docker-compose -f deploy-example/docker-compose.yaml --project-directory . up --build -d
+```
+
+And you'll get a dummy cluster with the exposed 8080 port!

@@ -1,0 +1,14 @@
+*.dump
+_build/
+.elixir_ls/
+/deps/
+
+.venv/
+
+.vscode/
+
+.sos-data/
+sos-data/
+Mnesia.*/
+
+.env

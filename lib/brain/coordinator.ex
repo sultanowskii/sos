@@ -148,7 +148,7 @@ defmodule Brain.Coordinator do
       [] ->
         {:error, @err_agents_unavailable}
 
-      [_] ->
+      [_ | _] ->
         index =
           agents
           |> Enum.count()
