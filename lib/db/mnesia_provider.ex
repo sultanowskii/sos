@@ -42,7 +42,7 @@ defmodule Db.MnesiaProvider do
     #example of error(same for each record)
     #adding to storage table data, but without available status
     iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
-    ...> GenServer.call(pid, {:add, Db.Storage, {"storage_name"}})
+    ...> GenServer.call(pid, {:add, Db.Storage, {"storage_name", true}})
     {:error, {:transaction_aborted, {:bad_type, {:storage, "storage_name"}}}}
   """
   def handle_call({:add, module, record}, _from, state) do
@@ -52,9 +52,9 @@ defmodule Db.MnesiaProvider do
   @doc """
   Gets records to Mnisia table
 
-  i{:ok, pid} = Db.MnesiaProvider.start_link([])
-  .> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
-  .> GenServer.call(pid, {:get, Db.Bucket, {"bucket_name"}})
+  {:ok, pid} = Db.MnesiaProvider.start_link([])
+  GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
+  GenServer.call(pid, {:get, Db.Bucket, {"bucket_name"}})
   {:ok, {:bucket, "bucket_name", timestamp}}
   """
   def handle_call({:get, module, id}, _from, state) do
@@ -67,22 +67,15 @@ defmodule Db.MnesiaProvider do
 
   examples:
     #add a bucket (name="bucket_name") record
-    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
+    > {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
-    ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
-    :ok
 
-
-    #adding to storage table where storage_name is "storage_name"
-    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
-    ...> GenServer.call(pid, {:add, Db.Storage, {"storage_name", true}})
-    ...> GenServer.call(pid, {:delete, Db.Storage, {"storage_name"}})
     :ok
 
 
     # example of error (same for each record)
     # add an invalid storage record (without `availability` field)
-    {:ok, pid} = Db.MnesiaProvider.start_link([])
+    >{:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:delete, Db.Storage, {"da"}})
     :fail
   """
