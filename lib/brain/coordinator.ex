@@ -17,7 +17,6 @@ defmodule Brain.Coordinator do
     Registry.register(BrainRegistry, :coordinator, nil)
 
     schedule_agents_health_check()
-    shecule_db_health_check()
 
     {:ok, state}
   end
@@ -114,21 +113,6 @@ defmodule Brain.Coordinator do
     end
   end
 
-  @impl true
-  def handle_call({:copy_object, source_bucket, source_key, dest_bucket, dest_key}, _from, state) do
-    get_result = GenServer.call(self(), {:get_object, source_bucket, source_key})
-
-    case get_result do
-      {:ok, data} ->
-        put_result = GenServer.call(self(), {:put_object, dest_bucket, dest_key, data})
-
-        {:reply, put_result, state}
-
-      {:error, _} ->
-        {:reply, get_result, state}
-    end
-  end
-
   # A typical way to set up a periodic work:
   # handle_info/2 + Process.send_after
   @impl true
@@ -154,20 +138,6 @@ defmodule Brain.Coordinator do
     end
 
     schedule_agents_health_check()
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info(:check_db_health, state) do
-    case GenServer.call(Db.MnesiaProvider, :health_check) do
-      :ok ->
-        Logger.debug("Database is healthy")
-
-      {:error, reason} ->
-        Logger.emergency("Database health check failed: #{inspect(reason)}")
-    end
-
-    shecule_db_health_check()
     {:noreply, state}
   end
 
@@ -201,9 +171,5 @@ defmodule Brain.Coordinator do
 
   defp schedule_agents_health_check do
     Process.send_after(self(), :check_agents_health, @health_check_interval)
-  end
-
-  defp shecule_db_health_check do
-    Process.send_after(self(), :check_db_health, @health_check_interval)
   end
 end

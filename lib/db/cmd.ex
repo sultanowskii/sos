@@ -6,28 +6,20 @@ defmodule Db.Cmd do
   require Logger
   alias :mnesia, as: Mnesia
 
-  @db_store "#{System.user_home()}/.mnesia"
-
   def init do
-    Mnesia.create_schema([node()])
+    Mnesia.change_table_copy_type(:schema, node(), :disc_copies)
     Mnesia.start()
-    set_disk_location()
 
     init_tables()
+  end
+
+  def terminate do
+    Mnesia.stop()
   end
 
   defp init_tables do
     Db.Storage.init()
     Db.Bucket.init()
     Db.Object.init()
-  end
-
-  defp set_disk_location do
-    disk_dir = @db_store
-
-    File.mkdir_p!(disk_dir)
-
-    Mnesia.change_config(:dir, disk_dir)
-    Logger.info("Mnesia directory set to #{disk_dir}")
   end
 end

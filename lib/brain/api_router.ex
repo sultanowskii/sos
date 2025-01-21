@@ -4,7 +4,6 @@ defmodule Brain.ApiRouter do
   """
   alias Brain.ApiSerice
   alias Brain.Mapper
-  alias Brain.Service
 
   use Plug.Router
   use Plug.ErrorHandler
@@ -34,14 +33,13 @@ defmodule Brain.ApiRouter do
   # ListObjectsV2
   # Supported params:
   # - list-type
-
   get "/:bucket" do
     conn = fetch_query_params(conn)
     params = conn.query_params
     _list_type = params["list-type"]
 
     resp =
-      ApiSerice.list_objects()
+      ApiSerice.list_objects(bucket)
       |> Mapper.map_resp_list_objects()
       |> XmlBuilder.generate()
 
@@ -90,28 +88,7 @@ defmodule Brain.ApiRouter do
 
       _ ->
         # CopyObject
-        parse_result = parse_path(copy_source)
-
-        case parse_result do
-          {:error, message} ->
-            send_resp(conn, 400, message)
-
-          {source_bucket, source_key} ->
-            result = ApiSerice.copy_object(source_bucket, source_key, bucket, key)
-
-            case result do
-              {:ok, raw} ->
-                resp =
-                  raw
-                  |> Mapper.map_resp_copy_object()
-                  |> XmlBuilder.generate()
-
-                send_resp(conn, 200, resp)
-
-              e = {:error, _} ->
-                handle_error(conn, e)
-            end
-        end
+        send_resp(conn, 501, "copy is not supported")
     end
   end
 
@@ -162,20 +139,6 @@ defmodule Brain.ApiRouter do
       _ ->
         Logger.warning("API: unexpected error #{inspect(e)}")
         send_resp(conn, 500, "unexpected error")
-    end
-  end
-
-  defp parse_path(s) do
-    s
-    |> Enum.at(0)
-    |> String.trim("/")
-    |> String.split("/")
-    |> case do
-      [source_bucket | source_key_parts] ->
-        {source_bucket, key_from_tokens(source_key_parts)}
-
-      _ ->
-        {:error, "invalid parameter"}
     end
   end
 end

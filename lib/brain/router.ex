@@ -10,6 +10,6 @@ defmodule Brain.Router do
   match _ do
     request_url = conn |> request_url()
     Logger.debug("attempted to access #{inspect(request_url)}, #{inspect(conn)}")
-    send_resp(conn, 404, "This resource doesn't exist")
+    send_resp(conn, 404, "this resource doesn't exist")
   end
 end

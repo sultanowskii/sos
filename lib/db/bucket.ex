@@ -38,7 +38,6 @@ defmodule Db.Bucket do
 
       {:error, :not_found} ->
         Logger.debug("bucket not found, creating new bucket")
-        IO.puts("Creating new bucket")
         add(name)
     end
   end
