@@ -155,6 +155,8 @@ defmodule Brain.Coordinator do
           |> :rand.uniform()
           |> Kernel.-(1)
 
+        update_agent_status(index, true)
+
         {:ok, Enum.at(agents, index)}
     end
   end
@@ -163,10 +165,20 @@ defmodule Brain.Coordinator do
     :global.registered_names()
     |> Enum.filter(fn name ->
       case name do
-        {:storage_agent, _} -> true
-        _ -> false
+        {:storage_agent, _} ->
+          true
+
+        _ ->
+          false
       end
     end)
+  end
+
+  defp update_agent_status(agent_name, status) do
+    GenServer.call(
+      Db.MnesiaProvider,
+      {:add, Db.Storage, {agent_name, status}}
+    )
   end
 
   defp schedule_agents_health_check do
