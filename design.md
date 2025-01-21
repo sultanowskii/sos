@@ -49,7 +49,7 @@ architecture-beta
 ```
 
 
-Database diagrams  
+Database diagram  
 ```mermaid
 erDiagram
     STORAGE {
