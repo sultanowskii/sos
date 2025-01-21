@@ -115,8 +115,8 @@ defmodule Db.MnesiaProvider do
   end
 
   defp handle_db_operation(:get_by_prefix, module, prefix, state) do
-   res = module.get_by_prefix(prefix)
-   {:reply, res, state}
+    res = module.get_by_prefix(prefix)
+    {:reply, res, state}
   end
 
   defp handle_db_operation(:get_objects_by_bucket, module, prefix, state) do
