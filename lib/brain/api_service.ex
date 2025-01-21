@@ -2,26 +2,75 @@ defmodule Brain.ApiSerice do
   @moduledoc """
   Brain service logic.
   """
+  require Logger
 
   @err_coordinator_unavailable :coordinator_unavailable
 
-  def list_buckets(prefix) do
-    # TODO: DB
-    data = %{
-      prefix: prefix,
-      buckets: [
-        %{
-          creation_date: "some_date",
-          name: "some name #1"
-        },
-        %{
-          creation_date: "some_other_date",
-          name: "some name #2"
-        }
-      ]
-    }
+  def list_buckets do
+    case GenServer.call(Db.MnesiaProvider, {:get_all, Db.Bucket}) do
+      {:ok, records} ->
+        data =
+          Enum.map(records, fn record ->
+            {:bucket, name, created_at} = record
 
-    data
+            %{
+              creation_date: created_at,
+              name: name
+            }
+          end)
+
+        data
+
+      {:error, reason} ->
+        Logger.warning("Failed to get buckets: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  def list_buckets(prefix) do
+    case GenServer.call(Db.MnesiaProvider, {:get_all_by_prefix, Db.Bucket, prefix}) do
+      {:ok, records} ->
+        data =
+          Enum.map(records, fn record ->
+            {:bucket, name, created_at} = record
+
+            %{
+              creation_date: created_at,
+              name: name
+            }
+          end)
+
+        data
+
+      {:error, reason} ->
+        Logger.warning("Failed to get buckets: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  # TODO REMOVE, ONLY FOR TESTING
+  def ping() do
+    GenServer.call(Brain.Coordinator, {:put_object, "my_bucket", "my_key.txt", "binary_data"})
+
+    GenServer.call(
+      Brain.Coordinator,
+      {:put_object, "my_buck312et", "3my_1key.txt", "binary_data"}
+    )
+
+    GenServer.call(
+      Brain.Coordinator,
+      {:put_object, "my_buck312et", "dasdsadasmy_k312ey.txt", "das"}
+    )
+
+    GenServer.call(
+      Brain.Coordinator,
+      {:put_object, "my_buck321et", "my1_k312ey.txt", "binary_dadata"}
+    )
+
+    GenServer.call(
+      Brain.Coordinator,
+      {:put_object, "my_buck312et", "my1_k312ey.txt", "binary_adata"}
+    )
   end
 
   def list_objects(prefix) do

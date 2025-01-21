@@ -20,8 +20,8 @@ defmodule Db.Bucket do
   end
 
   def get(name) do
-    record = Tuple.insert_at(name, 0, @table)
-    MnesiaHelper.get(record)
+    {name} = name
+    MnesiaHelper.get({@table, name})
   end
 
   def delete(name) do
@@ -47,7 +47,7 @@ defmodule Db.Bucket do
     MnesiaHelper.get_matching_record({@table, :_, :_})
   end
 
-  def get_all(prefix) do
-    MnesiaHelper.get_matching_record({@table, prefix, :_})
+  def get_all(name) do
+    MnesiaHelper.get_matching_record({@table, name, :_})
   end
 end
