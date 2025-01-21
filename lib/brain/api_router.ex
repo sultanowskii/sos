@@ -38,12 +38,20 @@ defmodule Brain.ApiRouter do
     params = conn.query_params
     _list_type = params["list-type"]
 
-    resp =
-      ApiSerice.list_objects(bucket)
-      |> Mapper.map_resp_list_objects()
-      |> XmlBuilder.generate()
+    result = ApiSerice.list_objects(bucket)
 
-    send_resp(conn, 200, resp)
+    case result do
+      {:ok, result} ->
+        resp =
+          result
+          |> Mapper.map_resp_list_objects()
+          |> XmlBuilder.generate()
+
+        send_resp(conn, 200, resp)
+
+      e = {:error, _} ->
+        handle_error(conn, e)
+    end
   end
 
   # CreateBucket

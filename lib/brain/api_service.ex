@@ -6,8 +6,8 @@ defmodule Brain.ApiSerice do
 
   @err_coordinator_unavailable :coordinator_unavailable
 
-  def list_buckets(prefix) do
-    case GenServer.call(Db.MnesiaProvider, {:get_by_prefix, Db.Bucket, prefix}) do
+  def list_buckets do
+    case GenServer.call(Db.MnesiaProvider, {:get_all, Db.Bucket}) do
       {:ok, records} ->
         %{
           buckets:
@@ -17,7 +17,7 @@ defmodule Brain.ApiSerice do
                 name: name
               }
             end),
-          prefix: prefix
+          prefix: ""
         }
 
       {:error, reason} ->
@@ -26,34 +26,29 @@ defmodule Brain.ApiSerice do
     end
   end
 
-  def list_objects(prefix) do
-    case GenServer.call(Db.MnesiaProvider, {:get_by_prefix, Db.Object, prefix}) do
+  def list_objects(bucket) do
+    case GenServer.call(Db.MnesiaProvider, {:get_objects_by_bucket, bucket}) do
       {:ok, records} ->
-        grouped_by_bucket =
-          Enum.group_by(records, fn {:object, _name, bucket_name, _storage, _size, _created_at} ->
-            bucket_name
-          end)
-
         contents =
-          Enum.map(grouped_by_bucket, fn {bucket_name, records} ->
+          Enum.map(records, fn {:object, name, _bucket_name, _storage, size, created_at} ->
             %{
-              bucket_name: bucket_name,
-              prefix: prefix,
-              key_count: Enum.count(records),
-              is_truncated: false,
-              contents:
-                Enum.map(records, fn {:object, name, _bucket_name, _storage, size, created_at} ->
-                  %{
-                    key: name,
-                    last_modified: created_at,
-                    size: size,
-                    storage_class: "STANDARD"
-                  }
-                end)
+              key: name,
+              last_modified: created_at,
+              size: size,
+              storage_class: "STANDARD"
             }
           end)
 
-        {:ok, contents}
+        result =
+          %{
+            name: bucket,
+            prefix: "",
+            key_count: Enum.count(records),
+            is_truncated: false,
+            contents: contents
+          }
+
+        {:ok, result}
 
       {:error, reason} ->
         Logger.warning("Failed to get objects: #{inspect(reason)}")
