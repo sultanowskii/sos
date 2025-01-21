@@ -1,6 +1,7 @@
 # functional-programming-lab3
 
-Выполнили:<br>
+Выполнили:
+
 1. `Султанов Артур Радикович` (`367553`)
 2. `Нягин Михаил Алексеевич` (`368601`)
 
@@ -27,41 +28,43 @@
 
 ## Требование к разрабаотанному ПО
 
-Реализациия S3 хранилище, совместимым c aws S3 api
+Реализация хранилища, частично совместимым c AWS S3 API
 
 Доступны следующие методы:
 
-- `CreateBucket`
-- `ListBuckets`
-- `DeleteBucket`
-- `PutObject`
-- `CopyObject`
-- `ListObjectsV2`
-- `GetObject`
-- `DeleteObject`
+* `CreateBucket`
+* `ListBuckets`
+* `DeleteBucket`
+* `PutObject`
+* `CopyObject`
+* `ListObjectsV2`
+* `GetObject`
+* `DeleteObject`
 
-Подробнее об архитектуре в [design.md](https://github.com/sultanowskii/sos/blob/main/design.md)
-
+Подробнее об архитектуре в [design.md](design.md)
 
 ## Реализация с минимальными комментариями
 
 ### Хранилище
 
-Предоставляет api для работы с хранилищем
+Предоставляет API для работы с хранилищем
 
-Подключается и "общается" с координатором при помощи `Node.connect()`. Таким образом хранилки и их количество полностью независимо от основной части приложения. 
+Подключается и "общается" с координатором при помощи `Node.connect()`. Таким образом хранилки и их количество полностью независимо от основной части приложения.
 
 Чтобы запустить хранилку через консоль:
+
 ```Elixir
 elixir \
     --name client@127.0.0.1 \
     --cookie cookie-example \
     -S mix run -- storage-agent --brain-name server@127.0.0.1 --client-id sherlock-holmes
 ```
-Подробнее о деталях запуска и конфигурации в [Contributing.md](https://github.com/sultanowskii/sos/blob/main/CONTRIBUTING.md)
 
-Супервизор, который при инициализации подключается к центру
-```Elixir 
+Подробнее о деталях запуска и конфигурации в [Contributing.md](CONTRIBUTING.md)
+
+Входная точка, где запускается супервизор и происходит подключение к координатору:
+
+```Elixir
 defmodule StorageAgent.Cmd do
   @moduledoc """
   Storage Agent entrypoint.
@@ -100,7 +103,6 @@ defmodule StorageAgent.Cmd do
 end
 ```
 
-
 ### База данных
 
 Предоставляет api для работы с базой данных.
@@ -128,16 +130,17 @@ Atomic transactions. A series of table manipulation operations can be grouped in
 Предоставляет web api, для взаимодействия с aws S3
 
 Для запуска координатора необходимо выполнить команду
+
 ```bash
 elixir \                                                    
     --name server@127.0.0.1 \
     --cookie cookie-example \
     -S mix run -- brain                                    
 ```
+
 Подробнее о деталях запуска и конфигурации в [Contributing.md](https://github.com/sultanowskii/sos/blob/main/CONTRIBUTING.md)
 
-
-Включаетв себя `Supervisor`, контролирующий работу процессов
+В нем запускается `Supervisor`, контролирующий API-сервер, координатор и БД:
 
 ```Elixir
 defmodule Brain.Cmd do
@@ -167,7 +170,7 @@ defmodule Brain.Cmd do
 end
 ```
 
-а также `api_router` для взаимодействия с внешними подключениями
+А также `ApiRouter` для взаимодействия с внешними подключениями:
 
 ```Elixir
 defmodule Brain.ApiRouter do
@@ -317,13 +320,13 @@ end
 ```
 
 ## Пример работы программы
+
 Подробнее о деталях запуска и конфигурации в [Contributing.md](https://github.com/sultanowskii/sos/blob/main/CONTRIBUTING.md)
 
-
-TODO
 ```bash
 
 ```
 
 ## Выводы
-В ходе данной лабораторной работы, использовав различные инструменты elixir реализовали s3 хранилище совместимое с aws api. 
+
+В ходе данной лабораторной работы, на языке программирования elixir, с использованием различных библиотек (Plug, Bandit) было реализовано хранилище частично совместимое с AWS s3 API.
