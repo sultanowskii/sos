@@ -52,8 +52,6 @@ defmodule Db.MnesiaProvider do
   @doc """
   Gets records to Mnisia table
 
-  sample of use TODO(need to ignore time difference while running the test)
-  but the sample of use & output:
   i{:ok, pid} = Db.MnesiaProvider.start_link([])
   .> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
   .> GenServer.call(pid, {:get, Db.Bucket, {"bucket_name"}})
@@ -102,10 +100,6 @@ defmodule Db.MnesiaProvider do
 
   def handle_call({:get_all, module, name}, _, state) do
     handle_db_operation(:get_all, module, name, state)
-  end
-
-  def handle_call({:get_objects, name}, _, state) do
-    handle_db_operation(:get_objects, Db.Object, name, state)
   end
 
   def handle_call({:get_objects_by_bucket, name}, _, state) do
