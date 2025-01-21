@@ -15,7 +15,7 @@ defmodule Db.Cmd do
     Mnesia.start()
     Mnesia.change_table_copy_type(:schema, node(), :disc_copies)
 
-    Logger.info("Mnesia started with copies in directory: #{@db_dir}")
+    Logger.info("mnesia started, data directory: #{@db_dir}")
 
     init_tables()
   end
