@@ -8,15 +8,14 @@ defmodule Db.Object do
   @table :object
 
   def init do
-    MnesiaHelper.init(@table, [:name, :bucket_name, :storage, :created_at])
+    MnesiaHelper.init(@table, [:name, :bucket_name, :storage, :size, :created_at])
   end
 
   def add(record) do
-    {name, bucket_name, storage} = record
-    Logger.debug("adding object #{name} to bucket #{bucket_name} with storage #{storage}")
+    {name, bucket_name, storage, size} = record
 
     MnesiaHelper.add(
-      {@table, "#{bucket_name}/#{name}", bucket_name, storage,
+      {@table, "#{bucket_name}/#{name}", bucket_name, storage, size,
        DateTime.to_string(DateTime.utc_now())}
     )
   end
@@ -36,11 +35,36 @@ defmodule Db.Object do
   end
 
   def get_all do
-    MnesiaHelper.get_matching_record({@table, :_, :_, :_, :_})
+    MnesiaHelper.get_matching_record({@table, :_, :_, :_, :_, :_})
   end
 
   def get_all_by_bucket_name(bucket_name) do
-    result = MnesiaHelper.get_matching_record({@table, :_, bucket_name, :_, :_})
+    result = MnesiaHelper.get_matching_record({@table, :_, bucket_name, :_, :_, :_})
     result
+  end
+
+  @doc """
+  Searches for the records in the database according to the specified prefix
+    iex> Db.Object.add({"name","buck","stora"})
+    ...> Db.Object.get_by_prefix("na")
+    {:ok, [{:object, "f/name", "f", "storage", "2025-01-21 12:10:37.275384Z"}]}
+  """
+  def get_by_prefix(prefix) do
+    case get_all() do
+      {:ok, records} ->
+        data =
+          Enum.filter(records, fn
+            {@table, name, _, _, _} ->
+              String.starts_with?(name, prefix)
+
+            _ ->
+              []
+          end)
+
+        {:ok, data}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 end

@@ -48,7 +48,7 @@ architecture-beta
 ```
 
 
-Database diagrams  
+Database diagram  
 ```mermaid
 erDiagram
     STORAGE {
@@ -60,6 +60,8 @@ erDiagram
         string name PK "name"
         string bucket_name PK "bucket_name"
         string bucket_name FK "bucket identifier"
+        string storage_name FK "storage identifier"
+        int size "size of stored object"
         time created_at "meta information"
     }
 
@@ -68,7 +70,8 @@ erDiagram
         time created_at "meta information"
     }
 
-    OBJECT ||--|{ BUCKET : ManyToOne
+    OBJECT ||--|| BUCKET : OneToOne
+    OBJECT ||--|| STORAGE : OneToOne
 ```
 
 - `HTTP API` - Partially S3-compatible API 'frontend'

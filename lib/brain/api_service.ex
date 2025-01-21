@@ -6,8 +6,8 @@ defmodule Brain.ApiSerice do
 
   @err_coordinator_unavailable :coordinator_unavailable
 
-  def list_buckets do
-    case GenServer.call(Db.MnesiaProvider, {:get_all, Db.Bucket}) do
+  def list_buckets(prefix) do
+    case GenServer.call(Db.MnesiaProvider, {:get_by_prefix, Db.Bucket, prefix}) do
       {:ok, records} ->
         %{
           buckets:
@@ -17,7 +17,7 @@ defmodule Brain.ApiSerice do
                 name: name
               }
             end),
-          prefix: ""
+          prefix: prefix
         }
 
       {:error, reason} ->
@@ -26,26 +26,34 @@ defmodule Brain.ApiSerice do
     end
   end
 
-  def list_objects(bucket_name) do
-    case GenServer.call(Db.MnesiaProvider, {:get_objects_by_bucket, bucket_name}) do
+  def list_objects(prefix) do
+    case GenServer.call(Db.MnesiaProvider, {:get_by_prefix, Db.Object, prefix}) do
       {:ok, records} ->
+        grouped_by_bucket =
+          Enum.group_by(records, fn {:object, _name, bucket_name, _storage, _size, _created_at} ->
+            bucket_name
+          end)
+
         contents =
-          Enum.map(records, fn {:object, name, _bucket_name, _storage, _created_at} ->
+          Enum.map(grouped_by_bucket, fn {bucket_name, records} ->
             %{
-              key: name,
-              last_modified: "",
-              size: 0,
-              storage_class: "STANDARD"
+              bucket_name: bucket_name,
+              prefix: prefix,
+              key_count: Enum.count(records),
+              is_truncated: false,
+              contents:
+                Enum.map(records, fn {:object, name, _bucket_name, _storage, size, created_at} ->
+                  %{
+                    key: name,
+                    last_modified: created_at,
+                    size: size,
+                    storage_class: "STANDARD"
+                  }
+                end)
             }
           end)
 
-        %{
-          name: bucket_name,
-          prefix: "",
-          key_count: Enum.count(contents),
-          is_truncated: false,
-          contents: contents
-        }
+        {:ok, contents}
 
       {:error, reason} ->
         Logger.warning("Failed to get objects: #{inspect(reason)}")

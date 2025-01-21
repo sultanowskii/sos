@@ -42,7 +42,7 @@ defmodule Db.MnesiaProvider do
     #example of error(same for each record)
     #adding to storage table data, but without available status
     iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
-    ...> GenServer.call(pid, {:add, Db.Storage, {"storage_name"}})
+    ...> GenServer.call(pid, {:add, Db.Storage, {"storage_name", true}})
     {:error, {:transaction_aborted, {:bad_type, {:storage, "storage_name"}}}}
   """
   def handle_call({:add, module, record}, _from, state) do
@@ -52,11 +52,9 @@ defmodule Db.MnesiaProvider do
   @doc """
   Gets records to Mnisia table
 
-  sample of use TODO(need to ignore time difference while running the test)
-  but the sample of use & output:
-  i{:ok, pid} = Db.MnesiaProvider.start_link([])
-  .> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
-  .> GenServer.call(pid, {:get, Db.Bucket, {"bucket_name"}})
+  {:ok, pid} = Db.MnesiaProvider.start_link([])
+  GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
+  GenServer.call(pid, {:get, Db.Bucket, {"bucket_name"}})
   {:ok, {:bucket, "bucket_name", timestamp}}
   """
   def handle_call({:get, module, id}, _from, state) do
@@ -69,22 +67,15 @@ defmodule Db.MnesiaProvider do
 
   examples:
     #add a bucket (name="bucket_name") record
-    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
+    > {:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
-    ...> GenServer.call(pid, {:add, Db.Bucket, {"bucket_name"}})
-    :ok
 
-
-    #adding to storage table where storage_name is "storage_name"
-    iex> {:ok, pid} = Db.MnesiaProvider.start_link([])
-    ...> GenServer.call(pid, {:add, Db.Storage, {"storage_name", true}})
-    ...> GenServer.call(pid, {:delete, Db.Storage, {"storage_name"}})
     :ok
 
 
     # example of error (same for each record)
     # add an invalid storage record (without `availability` field)
-    {:ok, pid} = Db.MnesiaProvider.start_link([])
+    >{:ok, pid} = Db.MnesiaProvider.start_link([])
     ...> GenServer.call(pid, {:delete, Db.Storage, {"da"}})
     :fail
   """
@@ -104,23 +95,28 @@ defmodule Db.MnesiaProvider do
     handle_db_operation(:get_all, module, name, state)
   end
 
-  def handle_call({:get_objects, name}, _, state) do
-    handle_db_operation(:get_objects, Db.Object, name, state)
-  end
-
   def handle_call({:get_objects_by_bucket, name}, _, state) do
     handle_db_operation(:get_objects_by_bucket, Db.Object, name, state)
+  end
+
+  def handle_call({:get_by_prefix, module, prefix}, _, state) do
+    handle_db_operation(:get_by_prefix, module, prefix, state)
   end
 
   def handle_call({:get_storage, name, bucket_name}, _, state) do
     case Db.Object.get({name, bucket_name}) do
       {:ok, record} ->
-        {:object, _, _, provider, _} = record
+        {:object, _, _, provider, _, _} = record
         {:reply, {:ok, provider}, state}
 
       {:error, reason} ->
         {:reply, {:error, reason}, state}
     end
+  end
+
+  defp handle_db_operation(:get_by_prefix, module, prefix, state) do
+    res = module.get_by_prefix(prefix)
+    {:reply, res, state}
   end
 
   defp handle_db_operation(:get_objects_by_bucket, module, prefix, state) do

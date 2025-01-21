@@ -7,8 +7,8 @@ defmodule Db.Cmd do
   alias :mnesia, as: Mnesia
 
   def init do
-    Mnesia.change_table_copy_type(:schema, node(), :disc_copies)
     Mnesia.start()
+    Mnesia.change_table_copy_type(:schema, node(), :disc_copies)
 
     init_tables()
   end
