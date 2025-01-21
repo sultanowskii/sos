@@ -48,31 +48,6 @@ defmodule Brain.ApiSerice do
     end
   end
 
-  # TODO REMOVE, ONLY FOR TESTING
-  def ping() do
-    GenServer.call(Brain.Coordinator, {:put_object, "my_bucket", "my_key.txt", "binary_data"})
-
-    GenServer.call(
-      Brain.Coordinator,
-      {:put_object, "my_buck312et", "3my_1key.txt", "binary_data"}
-    )
-
-    GenServer.call(
-      Brain.Coordinator,
-      {:put_object, "my_buck312et", "dasdsadasmy_k312ey.txt", "das"}
-    )
-
-    GenServer.call(
-      Brain.Coordinator,
-      {:put_object, "my_buck321et", "my1_k312ey.txt", "binary_dadata"}
-    )
-
-    GenServer.call(
-      Brain.Coordinator,
-      {:put_object, "my_buck312et", "my1_k312ey.txt", "binary_adata"}
-    )
-  end
-
   def list_objects(bucket_name) do
     case GenServer.call(Db.MnesiaProvider, {:get_objects_by_bucket, bucket_name}) do
       {:ok, records} ->
