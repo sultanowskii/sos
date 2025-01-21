@@ -6,16 +6,9 @@ defmodule Db.Cmd do
   require Logger
   alias :mnesia, as: Mnesia
 
-  @db_dir "#{System.user_home!()}/.mnesia"
-
   def init do
-    Application.put_env(:mnesia, :dir, String.to_charlist("#{System.user_home!()}/.mnesia"))
-
-    Mnesia.stop()
     Mnesia.start()
     Mnesia.change_table_copy_type(:schema, node(), :disc_copies)
-
-    Logger.info("mnesia started, data directory: #{@db_dir}")
 
     init_tables()
   end
