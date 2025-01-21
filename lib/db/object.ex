@@ -36,4 +36,8 @@ defmodule Db.Object do
   def get_all do
     MnesiaHelper.get_matching_record({@table, :_, :_, :_})
   end
+
+  def get_all(prefix) do
+    MnesiaHelper.get_matching_record({@table, prefix, :_})
+  end
 end

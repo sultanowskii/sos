@@ -122,6 +122,24 @@ defmodule Db.MnesiaProvider do
   end
 
   def handle_call({:get_all, module}, _, state) do
+    handle_db_operation(:get_all, module, state)
+  end
+
+  def handle_call({:get_all_by_prefix, module, prefix}, _, state) do
+    handle_db_operation(:get_all_by_prefix, module, prefix, state)
+  end
+
+  defp handle_db_operation(:get_all_by_prefix, module, prefix, state) do
+    case module.get_all(prefix) do
+      {:ok, records} ->
+        {:reply, {:ok, records}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  defp handle_db_operation(:get_all, module, state) do
     case module.get_all() do
       {:ok, records} ->
         {:reply, {:ok, records}, state}
