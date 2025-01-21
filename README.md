@@ -1,4 +1,4 @@
-# functional-programming-lab3
+# functional-programming-lab4
 
 Выполнили:
 
@@ -36,7 +36,6 @@
 * `ListBuckets`
 * `DeleteBucket`
 * `PutObject`
-* `CopyObject`
 * `ListObjectsV2`
 * `GetObject`
 * `DeleteObject`
