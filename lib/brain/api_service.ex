@@ -1,4 +1,4 @@
-defmodule Brain.ApiSerice do
+defmodule Brain.ApiService do
   @moduledoc """
   Brain service logic.
   """
@@ -50,9 +50,9 @@ defmodule Brain.ApiSerice do
 
         {:ok, result}
 
-      {:error, reason} ->
+      e = {:error, reason} ->
         Logger.warning("Failed to get objects: #{inspect(reason)}")
-        {:error, reason}
+        e
     end
   end
 

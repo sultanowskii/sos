@@ -42,23 +42,20 @@ defmodule Brain.Coordinator do
   """
   @impl true
   def handle_call({:put_object, bucket, key, data}, _from, state) do
-    case pick_random_agent() do
-      {:ok, agent} ->
-        case GenServer.call({:global, agent}, {:put_object, bucket, key, data}) do
-          {:ok, size} ->
-            {:storage_agent, agent_name} = agent
+    with {:ok, agent} <- pick_random_agent(),
+         {:ok, size} <- GenServer.call({:global, agent}, {:put_object, bucket, key, data}) do
+      {:storage_agent, agent_name} = agent
 
-            GenServer.call(Db.MnesiaProvider, {:get_or_create, Db.Bucket, {bucket}})
-            GenServer.call(Db.MnesiaProvider, {:add, Db.Object, {key, bucket, agent_name, size}})
+      GenServer.call(Db.MnesiaProvider, {:get_or_create, Db.Bucket, {bucket}})
+      GenServer.call(Db.MnesiaProvider, {:add, Db.Object, {key, bucket, agent_name, size}})
 
-            {:reply, :ok, state}
-
-          _ ->
-            {:reply, :fail, state}
-        end
-
+      {:reply, :ok, state}
+    else
       e = {:error, @err_agents_unavailable} ->
         {:reply, e, state}
+
+      _ ->
+        {:reply, :fail, state}
     end
   end
 
@@ -92,24 +89,18 @@ defmodule Brain.Coordinator do
   """
   @impl true
   def handle_call({:delete_object, bucket, key}, _from, state) do
-    case GenServer.call(Db.MnesiaProvider, {:get_storage, key, bucket}) do
-      {:ok, storage_name} ->
-        agent = {:storage_agent, storage_name}
-
-        result = GenServer.call({:global, agent}, {:delete_object, bucket, key})
-
-        case result do
-          :ok ->
-            Logger.debug("Object deleted from bucket=#{bucket}, key=#{key}")
-            GenServer.call(Db.MnesiaProvider, {:delete, Db.Object, {key, bucket}})
-            {:reply, :ok, state}
-
-          _ ->
-            {:reply, :fail, state}
-        end
-
+    with {:ok, storage_name} <- GenServer.call(Db.MnesiaProvider, {:get_storage, key, bucket}),
+         agent = {:storage_agent, storage_name},
+         :ok <- GenServer.call({:global, agent}, {:delete_object, bucket, key}) do
+      Logger.debug("Object deleted from bucket=#{bucket}, key=#{key}")
+      GenServer.call(Db.MnesiaProvider, {:delete, Db.Object, {key, bucket}})
+      {:reply, :ok, state}
+    else
       {:error, _} ->
         {:reply, {:error, @err_agents_unavailable}, state}
+
+      _ ->
+        {:reply, :fail, state}
     end
   end
 
@@ -118,27 +109,29 @@ defmodule Brain.Coordinator do
   @impl true
   def handle_info(:check_agents_health, state) do
     case alive_storage_agents() do
-      [] ->
-        Logger.error("No agent is online")
-
       agents = [_ | _] ->
-        for agent <- agents do
-          result = GenServer.call({:global, agent}, :health_check)
+        Enum.each(agents, &check_and_report_agent_health/1)
 
-          {:storage_agent, agent_name} = agent
-
-          case result do
-            :ok ->
-              Logger.debug("#{agent_name} is alive")
-
-            _ ->
-              Logger.debug("#{agent_name} isn't alive")
-          end
-        end
+      [] ->
+        Logger.error("no agent is online")
     end
 
     schedule_agents_health_check()
     {:noreply, state}
+  end
+
+  defp check_and_report_agent_health(agent) do
+    result = GenServer.call({:global, agent}, :health_check)
+
+    {:storage_agent, agent_name} = agent
+
+    case result do
+      :ok ->
+        Logger.debug("#{agent_name} is alive")
+
+      _ ->
+        Logger.debug("#{agent_name} isn't alive")
+    end
   end
 
   defp pick_random_agent do

@@ -6,20 +6,14 @@ defmodule StorageOperation do
   require Logger
 
   def write(file_path, data) do
-    case create_dir(Path.dirname(file_path)) do
-      :ok ->
-        case File.write(file_path, data) do
-          :ok ->
-            Logger.debug("successfully wrote data to #{file_path}")
-            :ok
-
-          {:error, reason} ->
-            Logger.error("failed to write data to #{file_path}: #{reason}")
-            {:error, "failed to write data"}
-        end
-
-      {:error, _} = error ->
-        error
+    with :ok <- create_dir(Path.dirname(file_path)),
+         :ok <- File.write(file_path, data) do
+      Logger.debug("successfully wrote data to #{file_path}")
+      :ok
+    else
+      {:error, reason} ->
+        Logger.error("failed to write data to #{file_path}: #{reason}")
+        {:error, "failed to write data"}
     end
   end
 

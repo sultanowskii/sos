@@ -40,21 +40,11 @@ defmodule StorageAgent do
   def handle_call({:put_object, bucket, key, data}, _from, state) do
     file_path = get_hashed_file_path(state, bucket, key)
 
-    case StorageOperation.write(file_path, data) do
-      :ok ->
-        case File.stat(file_path) do
-          {:ok, %File.Stat{size: file_size}} ->
-            Logger.debug("saved object to bucket=#{bucket}, key=#{key}, size=#{file_size} bytes")
-            {:reply, {:ok, file_size}, state}
-
-          {:error, reason} ->
-            Logger.error(
-              "failed to retrieve file size for bucket=#{bucket}, key=#{key}: #{reason}"
-            )
-
-            {:reply, {:error, reason}, state}
-        end
-
+    with :ok <- StorageOperation.write(file_path, data),
+         {:ok, %File.Stat{size: file_size}} <- File.stat(file_path) do
+      Logger.debug("saved object to bucket=#{bucket}, key=#{key}, size=#{file_size} bytes")
+      {:reply, {:ok, file_size}, state}
+    else
       {:error, reason} ->
         Logger.error("failed to save object to bucket=#{bucket}, key=#{key}: #{reason}")
         {:reply, {:error, reason}, state}
