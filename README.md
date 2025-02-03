@@ -1,331 +1,91 @@
-# functional-programming-lab4
+# Simple Object Storage (SOS)
 
-Выполнили:
+Partially S3-compatible, naively distributed object storage.
 
-1. `Султанов Артур Радикович` (`367553`)
-2. `Нягин Михаил Алексеевич` (`368601`)
+Written fully in Elixir.
 
-## Задание
+## Overview
 
-Цель: получить навыки работы со специфичными для выбранной технологии/языка программирования приёмами.
+The idea is rather simple: There is a "`brain`" - a main component, that exposes S3-compatible HTTP API, stores the meta-info and also communicates with `storage agents`.
 
-### Требования
+There is also a "storage agent" - a component that actually stores objects and communicates with `Brain`. Several instances of them could run on the same machine, as well as on different nodes - as long as each of them has a network access to the `Brain`.
 
-* программа должна быть реализована в функциональном стиле;
-* требуется использовать идиоматичный для технологии стиль программирования;
-* задание и коллектив должны быть согласованы;
-* допустима совместная работа над одним заданием.
+You can think of `SOS` as something similar to [RAID 0](https://en.wikipedia.org/wiki/Standard_RAID_levels#RAID_0): separate "storage"s, each "object" is assigned to a specific "storage". That said, it's considered just a signular "big storage" from user's perspective. In other words, end users of SOS API use it the same way they would use S3 - without even knowking about "storages", "agents", etc.
 
-### Содержание отчёта
+Brain encapsulates a concept of storage agents, and storage agents encapsulate the way objects are actually stored - which makes both development AND usage quite easy.
 
-* титульный лист;
-* требования к разработанному ПО, включая описание алгоритма;
-* реализация с минимальными комментариями;
-* ввод/вывод программы;
-* выводы (отзыв об использованных приёмах программирования).
+### Limitations
 
----
+- Only several basic methods are supported, see below
+- No auth at all
+- Several parameters are not implemented
 
-## Требование к разрабаотанному ПО
+### Supported Methods
 
-Реализация хранилища, частично совместимым c AWS S3 API
+- `CreateBucket`
+- `ListBuckets`
+- `DeleteBucket`
+- `PutObject`
+- `ListObjectsV2`
+- `GetObject`
+- `DeleteObject`
 
-Доступны следующие методы:
+### Elixir
 
-* `CreateBucket`
-* `ListBuckets`
-* `DeleteBucket`
-* `PutObject`
-* `ListObjectsV2`
-* `GetObject`
-* `DeleteObject`
+In terms of elixir/erlang stack, `Brain` and `Agent`(s) are separate `Node`s - together they form a cluster, where `Brain` makes `GenServer` calls to `Agent`s.
 
-Подробнее об архитектуре в [design.md](design.md)
+## Install
 
-## Реализация с минимальными комментариями
+### Requirements
 
-### Хранилище
+You'll need:
 
-Предоставляет API для работы с хранилищем
+- [`elixir`](https://elixir-lang.org/)
 
-Подключается и "общается" с координатором при помощи `Node.connect()`. Таким образом хранилки и их количество полностью независимо от основной части приложения.
+### Commands
 
-Чтобы запустить хранилку через консоль:
+```bash
+git clone https://github.com/sultanowskii/sos.git
+cd sos
+```
 
-```Elixir
+## Usage
+
+### Basic local setup
+
+The following setup is only suitable for local environment / experiments. Docker setup is way less tedious, I recommend using it.
+
+#### `Brain`
+
+This is a main component - head/leader/whatever-you-name-it.
+
+```bash
+elixir \
+    --name server@127.0.0.1 \
+    --cookie cookie-example \
+    -S mix run -- brain
+```
+
+#### `Agent`
+
+This is an actual 'storage' worker.
+
+```bash
 elixir \
     --name client@127.0.0.1 \
     --cookie cookie-example \
-    -S mix run -- storage-agent --brain-name server@127.0.0.1 --client-id sherlock-holmes
+    -S mix run -- storage-agent --brain-name server@127.0.0.1 --client-id sherlock-holmes --directory sos-data
 ```
 
-Подробнее о деталях запуска и конфигурации в [Contributing.md](CONTRIBUTING.md)
+### Docker
 
-Входная точка, где запускается супервизор и происходит подключение к координатору:
+A recommended way to setup a SOS cluster.
 
-```Elixir
-defmodule StorageAgent.Cmd do
-  @moduledoc """
-  Storage Agent entrypoint.
-  """
-  alias StorageAgent.Argparser
-  require Logger
+I recommend to take a look at an example of multi-agent `docker-compose` setup in [deploy-example/](deploy-example/) - it can give you a basic idea of how to start and is actually a working example.
 
-  def start(args) do
-    config = Argparser.parse!(args)
+## About
 
-    connected =
-      config.brain_name
-      |> String.to_atom()
-      |> Node.connect()
+This project is a functional programming course assignment (at ITMO University). The theme is free, I choose to build an object storage. 
 
-    case connected do
-      true ->
-        IO.puts("connected to the brain")
+elixir is kinda cool.
 
-        children = [
-          {StorageAgent, config}
-        ]
-
-        opts = [strategy: :one_for_one, name: StorageAgent.Supervisor]
-
-        Supervisor.start_link(children, opts)
-
-      false ->
-        UIO.eputs("can't connect to the brain")
-    end
-  rescue
-    e in OptionParser.ParseError ->
-      UIO.eputs(e.message)
-      exit({:shutdown, 1})
-  end
-end
-```
-
-### База данных
-
-Предоставляет api для работы с базой данных.
-
-В качестве базы данных используется `mnesia`
-```plain
-A distributed key-value DBMS
-
-The following are some of the most important and attractive capabilities provided by Mnesia:
-
-* A relational/object hybrid data model that is suitable for telecommunications applications.
-* A DBMS query language, Query List Comprehension (QLC) as an add-on library.
-* Persistence. Tables can be coherently kept on disc and in the main memory.
-* Replication. Tables can be replicated at several nodes.
-Atomic transactions. A series of table manipulation operations can be grouped into a single atomic transaction.
-* Location transparency. Programs can be written without knowledge of the actual data location.
-*Extremely fast real-time data searches.
-* Schema manipulation routines. The DBMS can be reconfigured at runtime without stopping the system.
-```
-
-База данных предоставляет свое api, используя `GenServer`. "Общение" c базой данных инициализируется при помощи `Supervisor` на стороне координатора
-
-### Координатор
-
-Предоставляет web api, для взаимодействия с aws S3
-
-Для запуска координатора необходимо выполнить команду
-
-```bash
-elixir \                                                    
-    --name server@127.0.0.1 \
-    --cookie cookie-example \
-    -S mix run -- brain                                    
-```
-
-Подробнее о деталях запуска и конфигурации в [Contributing.md](https://github.com/sultanowskii/sos/blob/main/CONTRIBUTING.md)
-
-В нем запускается `Supervisor`, контролирующий API-сервер, координатор и БД:
-
-```Elixir
-defmodule Brain.Cmd do
-  @moduledoc """
-  Brain entrypoint.
-  """
-  require Logger
-
-  def start(_args) do
-    children = [
-      {
-        Bandit,
-        scheme: :http, plug: Brain.Router, port: 8080
-      },
-      {Brain.Coordinator, []},
-      {Db.MnesiaProvider, []}
-    ]
-
-    opts = [strategy: :one_for_one, name: Brain.Supervisor]
-
-    Registry.start_link(name: BrainRegistry, keys: :unique)
-
-    Logger.info("Starting application...")
-
-    Supervisor.start_link(children, opts)
-  end
-end
-```
-
-А также `ApiRouter` для взаимодействия с внешними подключениями:
-
-```Elixir
-defmodule Brain.ApiRouter do
-  @moduledoc """
-  API Endpoints router.
-  """
-  alias Brain.ApiService
-  alias Brain.Mapper
-
-  use Plug.Router
-  use Plug.ErrorHandler
-
-  require Logger
-
-  plug(:match)
-  plug(:dispatch)
-
-  @spec key_from_tokens([binary()]) :: binary()
-  def key_from_tokens(tokens) do
-    tokens |> Enum.join("/")
-  end
-
-  # ListBuckets
-  get "/" do
-    conn = fetch_query_params(conn)
-
-    resp =
-      ApiService.list_buckets()
-      |> Mapper.map_resp_list_buckets()
-      |> XmlBuilder.generate()
-
-    send_resp(conn, 200, resp)
-  end
-
-  # ListObjectsV2
-  # Supported params:
-  # - list-type
-  get "/:bucket" do
-    conn = fetch_query_params(conn)
-    params = conn.query_params
-    _list_type = params["list-type"]
-
-    resp =
-      ApiService.list_objects(bucket)
-      |> Mapper.map_resp_list_objects()
-      |> XmlBuilder.generate()
-
-    send_resp(conn, 200, resp)
-  end
-
-  # CreateBucket
-  put "/:bucket" do
-    ApiService.create_bucket(bucket)
-    conn |> put_resp_header("location", "/#{bucket}")
-    send_resp(conn, 200, "")
-  end
-
-  # DeleteBucket
-  delete "/:bucket" do
-    ApiService.delete_bucket(bucket)
-    send_resp(conn, 204, "")
-  end
-
-  # PutObject / CopyObject
-  # Supported headers:
-  # - x-amz-copy-source
-  put "/:bucket/*key_parts" do
-    key = key_from_tokens(key_parts)
-    conn = fetch_query_params(conn)
-    copy_source = conn |> get_req_header("x-amz-copy-source")
-
-    case copy_source do
-      [] ->
-        # PutObject
-        case Plug.Conn.read_body(conn) do
-          {:ok, request_data, conn} ->
-            result = ApiService.put_object(bucket, key, request_data)
-
-            case result do
-              :ok ->
-                send_resp(conn, 200, "")
-
-              e = {:error, _} ->
-                handle_error(conn, e)
-            end
-
-          e = {:error, _} ->
-            handle_error(conn, e)
-        end
-
-      _ ->
-        # CopyObject
-        send_resp(conn, 501, "copy is not supported")
-    end
-  end
-
-  # GetObject
-  get "/:bucket/*key_parts" do
-    key = key_from_tokens(key_parts)
-    result = ApiService.get_object(bucket, key)
-
-    case result do
-      {:ok, data} ->
-        send_resp(conn, 200, data)
-
-      e = {:error, _} ->
-        handle_error(conn, e)
-    end
-  end
-
-  # DeleteObject
-  delete "/:bucket/*key_parts" do
-    key = key_from_tokens(key_parts)
-    result = ApiService.delete_object(bucket, key)
-
-    case result do
-      :ok ->
-        send_resp(conn, 204, "")
-
-      e = {:error, _} ->
-        handle_error(conn, e)
-    end
-  end
-
-  match _ do
-    request_url = request_url(conn)
-    Logger.debug("attempted to access #{inspect(request_url)}, #{inspect(conn)}")
-    send_resp(conn, 404, "{}")
-  end
-
-  defp handle_error(conn, e) do
-    case e do
-      {:error, :coordinator_unavailable} ->
-        Logger.warning("API: coordinator isn't found in registry")
-        send_resp(conn, 503, "service unavailable")
-
-      {:error, :agents_unavailable} ->
-        Logger.warning("API: no agent is available")
-        send_resp(conn, 503, "service unavailable")
-
-      _ ->
-        Logger.warning("API: unexpected error #{inspect(e)}")
-        send_resp(conn, 500, "unexpected error")
-    end
-  end
-end
-```
-
-## Пример работы программы
-
-Подробнее о деталях запуска и конфигурации в [Contributing.md](https://github.com/sultanowskii/sos/blob/main/CONTRIBUTING.md)
-
-```bash
-
-```
-
-## Выводы
-
-В ходе данной лабораторной работы, на языке программирования elixir, с использованием различных библиотек (Plug, Bandit) было реализовано хранилище частично совместимое с AWS s3 API.
