@@ -1,6 +1,6 @@
 # Design
 
-(Minimally) AWS S3 API compatible object storage.
+(Partially) AWS S3 API compatible object storage.
 
 ## Supported Methods
 
@@ -47,8 +47,13 @@ architecture-beta
     storage4{group}:T -- B:junctionWorkersRight
 ```
 
+- `HTTP API` - Partially S3-compatible API 'frontend'
+- `Coordinator` - Keeps track of workers and entities. Is responsible for all operations.
+- `DB` - Database where all information regarding buckets, objects, etc is stored.
+- `Storage` - A worker which _actually_ stores the objects. Doesn't make decisions on its own, it waits for commands from the Coordinator.
 
-Database diagram  
+## Database diagram
+
 ```mermaid
 erDiagram
     STORAGE {
@@ -73,8 +78,3 @@ erDiagram
     OBJECT ||--|| BUCKET : OneToOne
     OBJECT ||--|| STORAGE : OneToOne
 ```
-
-- `HTTP API` - Partially S3-compatible API 'frontend'
-- `Coordinator` - Keeps track of workers and entities. Is responsible for all operations.
-- `DB` - Database where all information regarding buckets, objects, etc is stored.
-- `Storage` - A worker which _actually_ stores the objects. Doesn't make decisions on its own, it waits for commands from the Coordinator.

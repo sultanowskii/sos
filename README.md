@@ -6,13 +6,13 @@ Written fully in Elixir.
 
 ## Overview
 
-The idea is rather simple: There is a "`brain`" - a main component, that exposes S3-compatible HTTP API, stores the meta-info and also communicates with `storage agents`.
+The idea is rather simple: There is a `brain` - a main component, that exposes S3-compatible HTTP API, stores the meta-info and also communicates with `storage agents`.
 
-There is also a "storage agent" - a component that actually stores objects and communicates with `Brain`. Several instances of them could run on the same machine, as well as on different nodes - as long as each of them has a network access to the `Brain`.
+There is also a storage agent - a component that actually stores objects and communicates with `Brain`. Several instances of them could run on the same machine, as well as on different nodes - as long as each of them has a network access to the `Brain`.
 
-You can think of `SOS` as something similar to [RAID 0](https://en.wikipedia.org/wiki/Standard_RAID_levels#RAID_0): separate "storage"s, each "object" is assigned to a specific "storage". That said, it's considered just a signular "big storage" from user's perspective. In other words, end users of SOS API use it the same way they would use S3 - without even knowking about "storages", "agents", etc.
+You can think of `SOS` as something similar to [RAID 0](https://en.wikipedia.org/wiki/Standard_RAID_levels#RAID_0): separate storages, each object is assigned to a specific "storage". That said, it's considered just a signular "large storage" from user's perspective. In other words, end users of SOS API use it the same way they would use S3 - without thinking (or knowing) internals.
 
-Brain encapsulates a concept of storage agents, and storage agents encapsulate the way objects are actually stored - which makes both development AND usage quite easy.
+`Brain` encapsulates a concept of storage agents, and storage agents encapsulate the way objects are actually stored - which makes both development AND usage quite easy.
 
 ### Limitations
 
@@ -68,7 +68,7 @@ elixir \
 
 #### `Agent`
 
-This is an actual 'storage' worker.
+This is an actual storage worker.
 
 ```bash
 elixir \
@@ -85,7 +85,6 @@ I recommend to take a look at an example of multi-agent `docker-compose` setup i
 
 ## About
 
-This project is a functional programming course assignment (at ITMO University). The theme is free, I choose to build an object storage. 
+This project is a functional programming course assignment (at ITMO University). The theme was free, so me and my teammate chose to build an object storage.
 
 elixir is kinda cool.
-
